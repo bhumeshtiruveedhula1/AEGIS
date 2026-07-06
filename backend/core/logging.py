@@ -70,6 +70,23 @@ def _drop_color_message_key(
     return event_dict
 
 
+def _safe_add_logger_name(
+    logger: Any,
+    method_name: str,
+    event_dict: EventDict,
+) -> EventDict:
+    """
+    Safely add logger name to event_dict.
+
+    Works with both stdlib Logger (has .name) and structlog's PrintLogger
+    (which has no .name attribute). Gracefully omits the field when unavailable.
+    """
+    name = getattr(logger, "name", None)
+    if name:
+        event_dict["logger"] = name
+    return event_dict
+
+
 def configure_logging(
     *,
     level: str = "INFO",
@@ -93,7 +110,7 @@ def configure_logging(
     # --- Shared processors (applied to every log record) -------------------
     shared_processors: list[Processor] = [
         structlog.contextvars.merge_contextvars,       # inject request_id etc.
-        structlog.stdlib.add_logger_name,              # add "logger" field
+        _safe_add_logger_name,                         # add "logger" field (safe)
         structlog.stdlib.add_log_level,                # add "level" field
         _add_severity_level,                           # add "severity" field
         _drop_color_message_key,                       # clean uvicorn noise

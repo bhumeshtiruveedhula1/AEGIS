@@ -1,34 +1,89 @@
 # =============================================================================
-# CyberShield — Docker Compose (Repository Foundation)
+# CyberShield — Docker Compose (Module 1.2: Digital Twin Foundation)
 # =============================================================================
-# Currently defines: backend API service
+# This file defines the complete Digital Twin environment.
 #
-# Future additions (per module implementation):
-#   - it-logs:     IT log generator container (Week 1)
-#   - ot-logs:     OT Modbus simulator container (Week 1)
-#   - postgres:    PostgreSQL database (staging/production)
-#   - grafana:     Metrics dashboard (Week 4)
-#   - prometheus:  Metrics scraper (Week 4)
+# SERVICES
+# --------
+#   api                 — Backend FastAPI application (management backbone)
+#   domain-controller   — Identity infrastructure (IT segment, starts first)
+#   hospital-server     — Critical application server (IT segment)
+#   ot-node             — Modbus PLC simulation (OT segment)
+#   attacker            — Controlled attack source (Attacker segment — isolated)
 #
-# Usage:
-#   docker compose -f docker/docker-compose.yml up           # dev mode
-#   docker compose -f docker/docker-compose.yml up -d        # detached
-#   docker compose -f docker/docker-compose.yml down         # stop
-#   docker compose -f docker/docker-compose.yml logs -f api  # tail logs
+# NETWORK ARCHITECTURE
+# --------------------
+#   cybershield-management  (172.20.0.0/24) — API backbone
+#   cybershield-it          (172.20.1.0/24) — Hospital server + Domain Controller
+#   cybershield-ot          (172.20.2.0/24) — OT Node (isolated from IT)
+#   cybershield-attacker    (172.20.3.0/24) — Attacker (isolated from OT)
+#
+# STARTUP ORDER
+# -------------
+#   domain-controller → hospital-server → api (depends on DC health)
+#   ot-node           → independent (OT segment starts in parallel)
+#   attacker          → last (no dependencies)
+#
+# USAGE
+# -----
+#   docker compose -f docker/docker-compose.yml up -d          # start all
+#   docker compose -f docker/docker-compose.yml up api         # API only
+#   docker compose -f docker/docker-compose.yml logs -f        # all logs
+#   docker compose -f docker/docker-compose.yml down -v        # stop + clean
+#   docker compose -f docker/docker-compose.yml ps             # status
+#
+# BASELINE GENERATION (7 days → 10 minutes)
+# ------------------------------------------
+#   Override for accelerated baseline:
+#   DT_ACCELERATED_MODE=true docker compose up
+#
+# SEE ALSO
+# --------
+#   docker/digital_twin/config/network.env          — network settings
+#   docker/digital_twin/config/generation_rates.env — event rates
+#   docs/digital_twin.md                            — full documentation
 # =============================================================================
 
 name: cybershield
 
 # ---------------------------------------------------------------------------
-# Shared Network
+# Networks — 4-segment isolated architecture
 # ---------------------------------------------------------------------------
 networks:
-  cybershield-net:
+  cybershield-management:
+    name: cybershield-management
     driver: bridge
-    name: cybershield-net
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
+
+  cybershield-it:
+    name: cybershield-it
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+          gateway: 172.20.1.1
+
+  cybershield-ot:
+    name: cybershield-ot
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.2.0/24
+          gateway: 172.20.2.1
+
+  cybershield-attacker:
+    name: cybershield-attacker
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.3.0/24
+          gateway: 172.20.3.1
 
 # ---------------------------------------------------------------------------
-# Shared Volumes
+# Volumes — persistent log storage
 # ---------------------------------------------------------------------------
 volumes:
   cybershield-data:
@@ -37,79 +92,243 @@ volumes:
     name: cybershield-models
   cybershield-logs:
     name: cybershield-logs
+  dt-hospital-logs:
+    name: dt-hospital-logs
+  dt-dc-logs:
+    name: dt-dc-logs
+  dt-ot-logs:
+    name: dt-ot-logs
+  dt-attacker-logs:
+    name: dt-attacker-logs
 
 # ---------------------------------------------------------------------------
 # Services
 # ---------------------------------------------------------------------------
 services:
 
-  # -------------------------------------------------------------------------
-  # Backend API — Development mode
-  # -------------------------------------------------------------------------
+  # =========================================================================
+  # Domain Controller
+  # Identity infrastructure — starts FIRST (hospital-server depends on it)
+  # =========================================================================
+  domain-controller:
+    build:
+      context: ..
+      dockerfile: docker/digital_twin/domain_controller/Dockerfile
+    container_name: cybershield-domain-controller
+    image: cybershield-domain-controller:1.2
+    hostname: domain-controller
+    networks:
+      cybershield-it:
+        ipv4_address: 172.20.1.20
+      cybershield-management:
+        ipv4_address: 172.20.0.20
+    volumes:
+      - dt-dc-logs:/logs
+      - ../data/digital_twin/domain_controller:/logs/host
+    env_file:
+      - digital_twin/config/network.env
+      - digital_twin/config/generation_rates.env
+    environment:
+      - DT_LOG_PATH=/logs/domain_controller.jsonl
+      - DT_HEALTH_PORT=9001
+      - DT_RANDOM_SEED=43
+    ports:
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request; r=urllib.request.urlopen('http://localhost:9001/health',timeout=5); exit(0 if r.status==200 else 1)"]
+      interval: 20s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+    restart: unless-stopped
+    labels:
+      com.cybershield.module: "1.2"
+      com.cybershield.role: "domain_controller"
+      com.cybershield.segment: "it"
+
+  # =========================================================================
+  # Hospital Server
+  # Critical IT application server — depends on domain-controller being healthy
+  # =========================================================================
+  hospital-server:
+    build:
+      context: ..
+      dockerfile: docker/digital_twin/hospital_server/Dockerfile
+    container_name: cybershield-hospital-server
+    image: cybershield-hospital-server:1.2
+    hostname: hospital-server
+    depends_on:
+      domain-controller:
+        condition: service_healthy
+    networks:
+      cybershield-it:
+        ipv4_address: 172.20.1.10
+      cybershield-management:
+        ipv4_address: 172.20.0.10
+    volumes:
+      - dt-hospital-logs:/logs
+      - ../data/digital_twin/hospital_server:/logs/host
+    env_file:
+      - digital_twin/config/network.env
+      - digital_twin/config/generation_rates.env
+    environment:
+      - DT_LOG_PATH=/logs/hospital_server.jsonl
+      - DT_HEALTH_PORT=9002
+      - DT_RANDOM_SEED=42
+    ports:
+      - "9002:9002"
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request; r=urllib.request.urlopen('http://localhost:9002/health',timeout=5); exit(0 if r.status==200 else 1)"]
+      interval: 20s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+    restart: unless-stopped
+    labels:
+      com.cybershield.module: "1.2"
+      com.cybershield.role: "hospital_server"
+      com.cybershield.segment: "it"
+
+  # =========================================================================
+  # OT Node
+  # Modbus PLC simulation — independent of IT segment (OT isolation)
+  # =========================================================================
+  ot-node:
+    build:
+      context: ..
+      dockerfile: docker/digital_twin/ot_node/Dockerfile
+    container_name: cybershield-ot-node
+    image: cybershield-ot-node:1.2
+    hostname: ot-node
+    networks:
+      cybershield-ot:
+        ipv4_address: 172.20.2.10
+      cybershield-management:
+        ipv4_address: 172.20.0.30
+    volumes:
+      - dt-ot-logs:/logs
+      - ../data/digital_twin/ot_node:/logs/host
+    env_file:
+      - digital_twin/config/network.env
+      - digital_twin/config/generation_rates.env
+    environment:
+      - DT_LOG_PATH=/logs/ot_node.jsonl
+      - DT_HEALTH_PORT=9003
+      - DT_RANDOM_SEED=44
+    ports:
+      - "9003:9003"
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request; r=urllib.request.urlopen('http://localhost:9003/health',timeout=5); exit(0 if r.status==200 else 1)"]
+      interval: 20s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+    restart: unless-stopped
+    labels:
+      com.cybershield.module: "1.2"
+      com.cybershield.role: "ot_node"
+      com.cybershield.segment: "ot"
+
+  # =========================================================================
+  # Attacker
+  # Controlled attack source — infrastructure only in Module 1.2
+  # NO inbound ports, NO health check, isolated network segment
+  # =========================================================================
+  attacker:
+    build:
+      context: ..
+      dockerfile: docker/digital_twin/attacker/Dockerfile
+    container_name: cybershield-attacker
+    image: cybershield-attacker:1.2
+    hostname: attacker
+    networks:
+      cybershield-attacker:
+        ipv4_address: 172.20.3.10
+      # Attacker also on management net for log shipping to API
+      cybershield-management:
+        ipv4_address: 172.20.0.40
+    volumes:
+      - dt-attacker-logs:/logs
+      - ../data/digital_twin/attacker:/logs/host
+    env_file:
+      - digital_twin/config/network.env
+      - digital_twin/config/generation_rates.env
+    environment:
+      - DT_LOG_PATH=/logs/attacker.jsonl
+    # NO healthcheck — no inbound ports by design
+    # NO ports — no services exposed
+    restart: unless-stopped
+    labels:
+      com.cybershield.module: "1.2"
+      com.cybershield.role: "attacker"
+      com.cybershield.segment: "attacker"
+
+  # =========================================================================
+  # Backend API (Module 1.1 — extended for Digital Twin)
+  # =========================================================================
   api:
     build:
       context: ..
       dockerfile: docker/Dockerfile.dev
     container_name: cybershield-api
     image: cybershield:dev
+    depends_on:
+      hospital-server:
+        condition: service_healthy
+      ot-node:
+        condition: service_healthy
     ports:
       - "${APP_PORT:-8000}:8000"
     volumes:
-      # Mount source code for hot-reload
       - ..:/app
-      # Persist data artifacts outside the container
       - cybershield-data:/app/data
       - cybershield-models:/app/models
+      # Mount DT log directories (read-only for API)
+      - dt-hospital-logs:/app/data/digital_twin/hospital_server:ro
+      - dt-dc-logs:/app/data/digital_twin/domain_controller:ro
+      - dt-ot-logs:/app/data/digital_twin/ot_node:ro
+      - dt-attacker-logs:/app/data/digital_twin/attacker:ro
     env_file:
       - ../.env
     environment:
       - APP_ENV=development
       - LOG_FORMAT=console
       - DATABASE_URL=sqlite+aiosqlite:///./data/cybershield.db
+      - FEATURE_DIGITAL_TWIN_ENABLED=true
+      # Digital Twin connection details for health checks
+      - DT_HOSPITAL_SERVER_IP=172.20.1.10
+      - DT_HOSPITAL_SERVER_PORT=9002
+      - DT_DOMAIN_CONTROLLER_IP=172.20.1.20
+      - DT_DOMAIN_CONTROLLER_PORT=9001
+      - DT_OT_NODE_IP=172.20.2.10
+      - DT_OT_NODE_PORT=9003
     networks:
-      - cybershield-net
+      cybershield-management:
+        ipv4_address: 172.20.0.5
+      # API can probe IT containers (for health checks)
+      cybershield-it:
+        ipv4_address: 172.20.1.5
+      cybershield-ot:
+        ipv4_address: 172.20.2.5
     healthcheck:
-      test: ["CMD", "python", "-c",
-             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "python3", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       start_period: 15s
       retries: 3
     restart: unless-stopped
+    labels:
+      com.cybershield.module: "1.1"
+      com.cybershield.role: "api"
+      com.cybershield.segment: "management"
 
-  # -------------------------------------------------------------------------
-  # [FUTURE — Week 1] IT Log Generator Container
-  # -------------------------------------------------------------------------
-  # it-logs:
-  #   build:
-  #     context: ..
-  #     dockerfile: docker/it_container.Dockerfile
-  #   container_name: cybershield-it-logs
-  #   volumes:
-  #     - cybershield-data:/logs
-  #   environment:
-  #     - EVENT_GENERATION_RATE=1440  # 1 week in 10 minutes
-  #   networks:
-  #     - cybershield-net
-
-  # -------------------------------------------------------------------------
-  # [FUTURE — Week 1] OT Modbus Simulator Container
-  # -------------------------------------------------------------------------
-  # ot-logs:
-  #   build:
-  #     context: ..
-  #     dockerfile: docker/ot_container.Dockerfile
-  #   container_name: cybershield-ot-logs
-  #   volumes:
-  #     - cybershield-data:/logs
-  #   environment:
-  #     - EVENT_GENERATION_RATE=60480  # 7 days in ~5 minutes
-  #   networks:
-  #     - cybershield-net
-
-  # -------------------------------------------------------------------------
-  # [FUTURE — Staging/Production] PostgreSQL Database
-  # -------------------------------------------------------------------------
+  # =========================================================================
+  # [FUTURE — Week 3] PostgreSQL Database
+  # =========================================================================
   # postgres:
   #   image: postgres:16-alpine
   #   container_name: cybershield-postgres
@@ -122,7 +341,8 @@ services:
   #   ports:
   #     - "5432:5432"
   #   networks:
-  #     - cybershield-net
+  #     cybershield-management:
+  #       ipv4_address: 172.20.0.50
   #   healthcheck:
   #     test: ["CMD-SHELL", "pg_isready -U cybershield"]
   #     interval: 10s

@@ -1,0 +1,3 @@
+# Digital Twin — Hospital Server log output directory
+# Log files written by the hospital-server container are stored here.
+# .gitkeep ensures the directory exists in the repository.
