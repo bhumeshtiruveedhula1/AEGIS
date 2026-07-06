@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Lint: ruff + mypy
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint (ruff + mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run ruff linter
+        run: ruff check backend tests
+
+      - name: Run ruff formatter check
+        run: ruff format --check backend tests
+
+      - name: Run mypy type checker
+        run: mypy backend
+
+  # ---------------------------------------------------------------------------
+  # Test: pytest + coverage
+  # ---------------------------------------------------------------------------
+  test:
+    name: Test (pytest)
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Create required directories
+        run: mkdir -p data/raw data/normalized data/baseline models reports
+
+      - name: Run test suite
+        run: pytest tests/ --tb=short --strict-markers
+        env:
+          APP_ENV: development
+          SECRET_KEY: test-secret-key-ci
+          API_KEY: test-api-key-ci
+          LOG_LEVEL: DEBUG
+          LOG_FORMAT: console
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: reports/coverage/coverage.xml
+          fail_ci_if_error: false
+
+  # ---------------------------------------------------------------------------
+  # Docker Build: verify image builds correctly
+  # ---------------------------------------------------------------------------
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production Docker image
+        run: |
+          docker build -f docker/Dockerfile -t cybershield:ci-${{ github.sha }} .
+          echo "✓ Docker build successful"

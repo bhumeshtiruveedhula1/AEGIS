@@ -1,0 +1,48 @@
+# =============================================================================
+# CyberShield — Development & Testing Dependencies
+# =============================================================================
+# Install: pip install -r requirements-dev.txt
+# This extends requirements.txt with dev/test tooling.
+# =============================================================================
+
+# Include production deps
+-r requirements.txt
+
+# --- Testing ---
+pytest==8.2.2
+pytest-asyncio==0.23.7
+pytest-cov==5.0.0
+pytest-httpx==0.30.0
+pytest-mock==3.14.0
+coverage[toml]==7.5.3
+factory-boy==3.3.0
+
+# --- Type Checking ---
+mypy==1.10.0
+types-python-dateutil==2.9.0.20240316
+
+# --- Linting & Formatting ---
+ruff==0.4.10
+
+# --- Pre-commit ---
+pre-commit==3.7.1
+
+# --- ML Stack (Week 2 onwards) ---
+scikit-learn==1.5.0
+numpy==1.26.4
+shap==0.45.0
+networkx==3.3
+pandas==2.2.2
+
+# --- LLM Stack (Week 3 onwards) ---
+anthropic==0.28.0
+tenacity==8.3.0
+
+# --- Database (Week 1 onwards) ---
+sqlalchemy==2.0.30
+alembic==1.13.1
+aiosqlite==0.20.0
+
+# --- Dev Utilities ---
+ipython==8.24.0
+rich==13.7.1

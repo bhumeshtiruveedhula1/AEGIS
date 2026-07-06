@@ -1,0 +1,130 @@
+# =============================================================================
+# CyberShield — Docker Compose (Repository Foundation)
+# =============================================================================
+# Currently defines: backend API service
+#
+# Future additions (per module implementation):
+#   - it-logs:     IT log generator container (Week 1)
+#   - ot-logs:     OT Modbus simulator container (Week 1)
+#   - postgres:    PostgreSQL database (staging/production)
+#   - grafana:     Metrics dashboard (Week 4)
+#   - prometheus:  Metrics scraper (Week 4)
+#
+# Usage:
+#   docker compose -f docker/docker-compose.yml up           # dev mode
+#   docker compose -f docker/docker-compose.yml up -d        # detached
+#   docker compose -f docker/docker-compose.yml down         # stop
+#   docker compose -f docker/docker-compose.yml logs -f api  # tail logs
+# =============================================================================
+
+name: cybershield
+
+# ---------------------------------------------------------------------------
+# Shared Network
+# ---------------------------------------------------------------------------
+networks:
+  cybershield-net:
+    driver: bridge
+    name: cybershield-net
+
+# ---------------------------------------------------------------------------
+# Shared Volumes
+# ---------------------------------------------------------------------------
+volumes:
+  cybershield-data:
+    name: cybershield-data
+  cybershield-models:
+    name: cybershield-models
+  cybershield-logs:
+    name: cybershield-logs
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
+services:
+
+  # -------------------------------------------------------------------------
+  # Backend API — Development mode
+  # -------------------------------------------------------------------------
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    container_name: cybershield-api
+    image: cybershield:dev
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      # Mount source code for hot-reload
+      - ..:/app
+      # Persist data artifacts outside the container
+      - cybershield-data:/app/data
+      - cybershield-models:/app/models
+    env_file:
+      - ../.env
+    environment:
+      - APP_ENV=development
+      - LOG_FORMAT=console
+      - DATABASE_URL=sqlite+aiosqlite:///./data/cybershield.db
+    networks:
+      - cybershield-net
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+    restart: unless-stopped
+
+  # -------------------------------------------------------------------------
+  # [FUTURE — Week 1] IT Log Generator Container
+  # -------------------------------------------------------------------------
+  # it-logs:
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/it_container.Dockerfile
+  #   container_name: cybershield-it-logs
+  #   volumes:
+  #     - cybershield-data:/logs
+  #   environment:
+  #     - EVENT_GENERATION_RATE=1440  # 1 week in 10 minutes
+  #   networks:
+  #     - cybershield-net
+
+  # -------------------------------------------------------------------------
+  # [FUTURE — Week 1] OT Modbus Simulator Container
+  # -------------------------------------------------------------------------
+  # ot-logs:
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/ot_container.Dockerfile
+  #   container_name: cybershield-ot-logs
+  #   volumes:
+  #     - cybershield-data:/logs
+  #   environment:
+  #     - EVENT_GENERATION_RATE=60480  # 7 days in ~5 minutes
+  #   networks:
+  #     - cybershield-net
+
+  # -------------------------------------------------------------------------
+  # [FUTURE — Staging/Production] PostgreSQL Database
+  # -------------------------------------------------------------------------
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: cybershield-postgres
+  #   environment:
+  #     POSTGRES_DB: cybershield
+  #     POSTGRES_USER: cybershield
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   networks:
+  #     - cybershield-net
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U cybershield"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5

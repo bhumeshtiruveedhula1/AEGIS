@@ -1,0 +1,55 @@
+# =============================================================================
+# CyberShield — Development Docker Image
+# =============================================================================
+# Includes all dev dependencies + hot-reload uvicorn.
+# Mounts source code as volume — changes reflected immediately.
+#
+# Usage (via docker-compose.yml):
+#   docker compose -f docker/docker-compose.yml up
+#
+# Or standalone:
+#   docker build -f docker/Dockerfile.dev -t cybershield:dev .
+#   docker run -p 8000:8000 -v $(pwd):/app --env-file .env cybershield:dev
+# =============================================================================
+
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    APP_ENV=development \
+    LOG_LEVEL=DEBUG \
+    LOG_FORMAT=console \
+    APP_HOST=0.0.0.0 \
+    APP_PORT=8000
+
+WORKDIR /app
+
+# Install system dependencies including build tools for ML packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install all dependencies (dev + prod + ML + LLM)
+COPY requirements-dev.txt .
+RUN pip install --upgrade pip && pip install -r requirements-dev.txt
+
+# Copy source (will be overridden by volume mount in dev mode)
+COPY . .
+
+# Create required directories
+RUN mkdir -p /app/data/raw /app/data/normalized /app/data/baseline \
+             /app/data/attack_reference /app/models /app/reports
+
+EXPOSE 8000
+
+# Development server: single worker, hot-reload enabled
+CMD ["uvicorn", "backend.api.app:create_app", \
+     "--factory", \
+     "--host", "0.0.0.0", \
+     "--port", "8000", \
+     "--reload", \
+     "--log-level", "debug"]
