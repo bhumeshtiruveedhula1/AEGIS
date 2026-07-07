@@ -1,57 +1,115 @@
 """
-backend.features — Feature Engineering & Baseline Module
-=========================================================
-[Module 1.4 — Week 1, Phase 1B]
+backend.features — Behavioral Feature Engine
+============================================
+Module 2.2 — Operation AEGIS Phase 2
 
-RESPONSIBILITY
---------------
-Transform normalised LogEvents into numeric feature vectors suitable
-for Isolation Forest training. Also computes and stores the 7-day
-baseline statistics used for z-score normalisation.
+Public API surface for the Behavioral Feature Engine.
 
-DATA FLOW
----------
-LogEvents (7-day baseline window, from Normalization)
-    → LogFeatureExtractor
-    → HourlyFeatureVector (per host, per hour)
-    → BaselineGenerator
-    → BaselineStats (baseline_stats.json)
+The Feature Engine transforms normalized telemetry (CanonicalEvent) + learned
+behavioral baselines (BaselineReader) into deterministic behavioral feature
+vectors for downstream ML components.
 
-Then at inference time:
-LogEvent (live)
-    → LogFeatureExtractor
-    → feature_vector (z-score normalised using BaselineStats)
-    → Anomaly Detection Module
+Quick Start
+-----------
+    # Single event
+    from backend.features import FeaturePipeline, BaselineReader
 
-FEATURE SET (7 features, one row = one hourly window per host)
---------------------------------------------------------------
-1. event_frequency_per_host_per_type  (z-score of event counts)
-2. failed_login_ratio_per_host        (failed / total logins)
-3. privilege_escalation_count         (count of UAC/sudo events)
-4. unusual_process_count              (processes not in KNOWN_GOOD_PROCESSES)
-5. cross_subnet_connection_count      (connections crossing subnet boundary)
-6. dns_query_entropy                  (Shannon entropy of unique queried domains)
-7. abnormal_time_of_day              (logon events between 22:00–06:00 UTC)
+    reader = BaselineReader()
+    pipeline = FeaturePipeline(baseline_reader=reader)
+    records = pipeline.process_event(event)
 
-FUTURE CONTENTS
----------------
-- models/           HourlyFeatureVector, BaselineStats
-- extractor.py      LogFeatureExtractor
-- baseline.py       BaselineGenerator — computes 7-day stats
-- vectorizer.py     FeatureVectorizer — z-score normalisation
+    # Full pipeline run
+    from backend.features import FeatureService
 
-INTEGRATION CONTRACT
---------------------
-Input:  List[LogEvent] (7-day window for training, or single event at inference)
-Output: numpy.ndarray shape (N, 7) — normalised feature matrix
+    service = FeatureService()
+    report = service.extract_from_normalized_output()
 
-DEPENDENCIES
-------------
-- backend.shared.models    BaseEvent (LogEvent source)
-- backend.shared.utils     datetime_utils (hour truncation)
-- backend.core.constants   KNOWN_GOOD_PROCESSES, BASELINE_WINDOW_DAYS
+    # Inspect a feature vector
+    from backend.features import FeatureVector, ALL_FEATURE_NAMES, FEATURE_DIMENSION
 
-FEATURE FLAG
-------------
-Activated implicitly when detection module trains the model.
+    vec = records[0].feature_vector
+    print(vec.to_array())           # List of 56 floats in canonical order
+    print(vec.group("temporal"))    # Just temporal features
+    print(vec.novelty_count())      # How many novelty flags fired
+
+Downstream Contract
+-------------------
+- FeatureRecord is the atomic output unit.
+- FeatureVector.to_array() returns a list of FEATURE_DIMENSION floats.
+- Feature names are stable and listed in ALL_FEATURE_NAMES.
+- FEATURE_SCHEMA_VERSION must be checked before consuming stored vectors.
 """
+
+from __future__ import annotations
+
+# Core models
+from backend.features.models import (
+    FEATURE_DIMENSION,
+    FEATURE_GROUPS,
+    FEATURE_SCHEMA_VERSION,
+    ALL_FEATURE_NAMES,
+    FeaturePipelineReport,
+    FeatureRecord,
+    FeatureSchema,
+    FeatureVector,
+)
+
+# Pipeline and writer
+from backend.features.pipeline import FeaturePipeline
+from backend.features.writer import FeatureVectorWriter
+from backend.features.service import FeatureService
+
+# Exceptions
+from backend.features.exceptions import (
+    FeatureEngineError,
+    FeatureExtractionError,
+    FeatureInputError,
+    FeaturePipelineError,
+    FeatureSchemaError,
+    FeatureWriterError,
+)
+
+# Extractor utilities (for extension)
+from backend.features.extractors import (
+    BaseExtractor,
+    binary,
+    frequency_rank,
+    get_all_extractors,
+    get_extractor_registry,
+    safe_frequency,
+    safe_percentile_rank,
+    safe_z_score,
+)
+
+__all__ = [
+    # Schema constants
+    "FEATURE_SCHEMA_VERSION",
+    "FEATURE_DIMENSION",
+    "FEATURE_GROUPS",
+    "ALL_FEATURE_NAMES",
+    # Models
+    "FeatureSchema",
+    "FeatureVector",
+    "FeatureRecord",
+    "FeaturePipelineReport",
+    # Pipeline
+    "FeaturePipeline",
+    "FeatureVectorWriter",
+    "FeatureService",
+    # Exceptions
+    "FeatureEngineError",
+    "FeatureExtractionError",
+    "FeatureInputError",
+    "FeaturePipelineError",
+    "FeatureSchemaError",
+    "FeatureWriterError",
+    # Extractor utilities
+    "BaseExtractor",
+    "binary",
+    "frequency_rank",
+    "get_all_extractors",
+    "get_extractor_registry",
+    "safe_frequency",
+    "safe_percentile_rank",
+    "safe_z_score",
+]
