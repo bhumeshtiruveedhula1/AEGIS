@@ -44,6 +44,7 @@ or wrap with an external lock for concurrent access.
 from __future__ import annotations
 
 import json
+import threading
 from pathlib import Path
 
 import structlog
@@ -81,6 +82,11 @@ class BaselineStore:
         self._profiles_dir = self._root / "profiles"
         self._entities_dir = self._root / "entities"
         self._manifest_path = self._root / "manifest.json"
+        # Reentrant lock guards all write operations.
+        # BaselineStore is used from a single process, but may be called
+        # from multiple threads (e.g., scheduled updater + API thread).
+        # RLock allows the same thread to re-enter (e.g. save → _update_manifest).
+        self._lock = threading.RLock()
 
     @property
     def baseline_dir(self) -> Path:
@@ -111,17 +117,18 @@ class BaselineStore:
         self._ensure_dirs()
         profile_path = self._profiles_dir / f"{profile.profile_id}.json"
 
-        try:
-            data = profile.model_dump(mode="json")
-            self._write_json(profile_path, data)
-        except (OSError, TypeError, ValueError) as exc:
-            raise BaselineStorageError(
-                f"Failed to save profile {profile.profile_id}: {exc}",
-                path=str(profile_path),
-            ) from exc
+        with self._lock:
+            try:
+                data = profile.model_dump(mode="json")
+                self._write_json(profile_path, data)
+            except (OSError, TypeError, ValueError) as exc:
+                raise BaselineStorageError(
+                    f"Failed to save profile {profile.profile_id}: {exc}",
+                    path=str(profile_path),
+                ) from exc
 
-        # Update manifest
-        self._update_manifest(profile)
+            # Update manifest
+            self._update_manifest(profile)
 
         logger.info(
             "baseline_store_profile_saved",
@@ -210,14 +217,15 @@ class BaselineStore:
         safe_name = entity_key.entity_id.replace("::", "_").replace("/", "_")
         entity_path = entity_dir / f"{safe_name}.json"
 
-        try:
-            data = baseline.model_dump(mode="json")
-            self._write_json(entity_path, data)
-        except (OSError, TypeError, ValueError) as exc:
-            raise BaselineStorageError(
-                f"Failed to save entity {entity_key!r}: {exc}",
-                path=str(entity_path),
-            ) from exc
+        with self._lock:
+            try:
+                data = baseline.model_dump(mode="json")
+                self._write_json(entity_path, data)
+            except (OSError, TypeError, ValueError) as exc:
+                raise BaselineStorageError(
+                    f"Failed to save entity {entity_key!r}: {exc}",
+                    path=str(entity_path),
+                ) from exc
 
         logger.debug(
             "baseline_store_entity_saved",
@@ -305,7 +313,9 @@ class BaselineStore:
             return BaselineManifest()
 
     def _update_manifest(self, profile: BaselineProfile) -> None:
-        """Insert this profile into the manifest and persist."""
+        """Insert this profile into the manifest and persist atomically."""
+        # Called under self._lock from save() and save_profile_entities().
+        # RLock allows re-entry from within the same thread.
         self._ensure_dirs()
         manifest = self.load_manifest()
         manifest.add_entry(profile)

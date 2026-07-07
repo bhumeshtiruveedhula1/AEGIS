@@ -122,7 +122,11 @@ def frequency_rank(value: str | None, distribution: dict | None) -> float:
     try:
         return float(sorted_keys.index(lowered))
     except ValueError:
-        return float(len(sorted_keys))  # unseen = rarest
+        # Unseen value: return a rank beyond all seen values, capped at 100.0.
+        # Without the cap, this value varies with baseline size — an entity with
+        # 200 event types produces rank=200 while a small entity produces rank=5,
+        # making the feature non-comparable across entities for the Isolation Forest.
+        return min(float(len(sorted_keys)), 100.0)
 
 
 def binary(condition: bool | None) -> float:

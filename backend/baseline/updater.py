@@ -255,10 +255,12 @@ class BaselineUpdater:
         if not new_values:
             return existing
 
-        # Recover Welford state
+        # Recover Welford state from the serialised field.
+        # welford_m2 is now a proper Pydantic field that survives save/load
+        # cycles, so this correctly continues from the last build's state.
         n = existing.count
         mean = existing.mean or 0.0
-        m2 = existing._welford_m2 or 0.0
+        m2 = existing.welford_m2  # always 0.0 or correct restored value
         minimum = existing.minimum
         maximum = existing.maximum
 
@@ -280,7 +282,9 @@ class BaselineUpdater:
         # (requires re-sorting — unavoidable without storing all observations)
         # For production, use approximate percentiles or accept this tradeoff.
         # Here we compute from the new values only, then merge p50 as approximate.
-        new_sorted = sorted(float(v) for v in new_values)
+        # percentiles_approximate=True signals to callers that a full rebuild
+        # is needed to restore exact percentile values.
+        _ = sorted(float(v) for v in new_values)  # kept for future p-approx
 
         updated = NumericStats(
             field_name=existing.field_name,
@@ -295,8 +299,9 @@ class BaselineUpdater:
             p75=existing.p75,
             p95=existing.p95,
             p99=existing.p99,
+            welford_m2=m2,
+            percentiles_approximate=True,  # signal stale percentiles
         )
-        updated._welford_m2 = m2
         return updated
 
 

@@ -182,19 +182,26 @@ class FeaturePipeline:
 
         if self._primary_only:
             if primary_key is None:
+                logger.debug(
+                    "feature_pipeline_cold_start_skip",
+                    event_id=getattr(event, "event_id", "unknown"),
+                    detail="No baseline for any dimension (cold-start); primary_only=True skips record.",
+                )
                 return []
             return [self._extract_record(event, primary_key, primary_baseline)]
 
-        # Emit one record per dimension
+        # Emit one record per dimension, using that dimension's own baseline.
+        # Each entity dimension (user, host, source, user_host) must be
+        # assessed against ITS OWN behavioral baseline — not the primary's.
+        # Using the wrong baseline would corrupt novelty and deviation features
+        # for non-primary dimensions fed into downstream detection.
         records: list[FeatureRecord] = []
         for dim in ("user_host", "user", "host", "source"):
             key = keys[dim]
             if key is None:
                 continue
-            bl = baselines[dim]
-            # Use primary baseline for feature computation regardless of dimension
-            # (the primary baseline is the most specific available)
-            record = self._extract_record(event, key, primary_baseline)
+            dim_baseline = baselines[dim]  # dimension-specific baseline (may be None)
+            record = self._extract_record(event, key, dim_baseline)
             records.append(record)
 
         return records

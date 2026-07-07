@@ -44,6 +44,7 @@ Usage
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 import structlog
@@ -140,7 +141,7 @@ class EventAggregator:
 
     def aggregate_stream(
         self,
-        events_iter: "CanonicalEvent",  # type: ignore[assignment]  # actually iterable
+        events_iter: Iterable["CanonicalEvent"],
     ) -> dict[EntityKey, list["CanonicalEvent"]]:
         """
         Aggregate from any iterable (generator-friendly).

@@ -99,9 +99,22 @@ class TestComputeNumericStats:
 
     def test_welford_m2_stored(self) -> None:
         s = compute_numeric_stats("bytes_out", [100, 200, 300])
-        # M2 should be stored for incremental updates
-        assert s._welford_m2 is not None
-        assert s._welford_m2 > 0
+        # welford_m2 is now a proper Pydantic field (not a private class attr)
+        # so it survives JSON round-trips and incremental updates remain correct.
+        assert s.welford_m2 is not None
+        assert s.welford_m2 > 0
+
+    def test_welford_m2_survives_json_roundtrip(self) -> None:
+        """welford_m2 must persist through serialisation for correct incremental updates."""
+        s = compute_numeric_stats("bytes_out", [100, 200, 300])
+        original_m2 = s.welford_m2
+        # Round-trip through JSON (as happens when baseline is saved and reloaded)
+        from backend.baseline.models import NumericStats
+        restored = NumericStats.model_validate_json(s.model_dump_json())
+        assert restored.welford_m2 == original_m2, (
+            "welford_m2 was lost during JSON round-trip — "
+            "incremental std would be wrong after save/load"
+        )
 
 
 # ===========================================================================

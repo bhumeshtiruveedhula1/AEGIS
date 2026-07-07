@@ -221,8 +221,9 @@ def compute_numeric_stats(
         p95=p95,
         p99=p99,
     )
-    # Store Welford M2 state for incremental updates
-    stats._welford_m2 = m2
+    # Store Welford M2 state for incremental updates.
+    # This is a proper Pydantic field — it persists through JSON round-trips.
+    stats = stats.model_copy(update={"welford_m2": m2})
     return stats
 
 
@@ -402,7 +403,17 @@ def compute_modbus_baseline(
 
     Returns None if no events have Modbus fields.
     """
-    modbus_events = [e for e in events if e.modbus_register is not None]
+    # Include any event with at least one Modbus-relevant field.
+    # This covers: register read/write, FC-only commands (broadcasts,
+    # coil commands), and value-only events without a specific register.
+    modbus_events = [
+        e for e in events
+        if (
+            e.modbus_register is not None
+            or e.modbus_function_code is not None
+            or e.modbus_value is not None
+        )
+    ]
     if not modbus_events:
         return None
 

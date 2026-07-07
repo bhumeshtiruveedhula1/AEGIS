@@ -102,8 +102,10 @@ class TestFeaturePipelineWithBaseline:
         reader = _make_mock_reader(user_baseline=baseline)
         pipeline = FeaturePipeline(baseline_reader=reader)
         records = pipeline.process_event(make_hospital_event())
-        primary = records[0]
-        assert primary.feature_vector.get("process_is_novel") == 0.0
+        # Select the user record — only user_baseline is provided in this test.
+        # Each dimension uses its own baseline; user record has baseline_available=True.
+        user_record = next(r for r in records if r.entity_key.entity_type == "user")
+        assert user_record.feature_vector.get("process_is_novel") == 0.0
 
     def test_novel_process_flagged(self) -> None:
         baseline = make_hospital_baseline()
@@ -111,8 +113,11 @@ class TestFeaturePipelineWithBaseline:
         pipeline = FeaturePipeline(baseline_reader=reader)
         event = make_hospital_event({"process": "evil.exe"})
         records = pipeline.process_event(event)
-        primary = records[0]
-        assert primary.feature_vector.get("process_is_novel") == 1.0
+        # Select the user record — only user_baseline is provided in this test.
+        # Each dimension uses its own baseline; user record has baseline_available=True
+        # and correctly detects the novel process against the user entity's history.
+        user_record = next(r for r in records if r.entity_key.entity_type == "user")
+        assert user_record.feature_vector.get("process_is_novel") == 1.0
 
     def test_novel_dst_ip_flagged(self) -> None:
         baseline = make_hospital_baseline()
@@ -120,8 +125,11 @@ class TestFeaturePipelineWithBaseline:
         pipeline = FeaturePipeline(baseline_reader=reader)
         event = make_hospital_event({"dst_ip": "10.99.99.99"})
         records = pipeline.process_event(event)
-        primary = records[0]
-        assert primary.feature_vector.get("dst_ip_is_novel") == 1.0
+        # Select the user record — only user_baseline is provided in this test.
+        # Each dimension uses its own baseline; user record has baseline_available=True
+        # and correctly detects the novel destination IP against the user entity's history.
+        user_record = next(r for r in records if r.entity_key.entity_type == "user")
+        assert user_record.feature_vector.get("dst_ip_is_novel") == 1.0
 
 
 # ===========================================================================
@@ -158,9 +166,37 @@ class TestFeaturePipelineDimensions:
         reader = _make_mock_reader(user_baseline=baseline)
         pipeline = FeaturePipeline(baseline_reader=reader)
         records = pipeline.process_event(make_hospital_event())
-        primary = records[0]
-        assert primary.feature_vector.get("has_user_baseline") == 1.0
-        assert primary.feature_vector.get("has_host_baseline") == 0.0
+        # All records share the same baseline-presence context (injected by pipeline)
+        # regardless of which dimension they represent.
+        assert records[0].feature_vector.get("has_user_baseline") == 1.0
+        assert records[0].feature_vector.get("has_host_baseline") == 0.0
+
+    def test_each_dimension_uses_own_baseline(self) -> None:
+        """
+        Regression test for A1: each emitted FeatureRecord must use its own
+        dimension's baseline, not the primary baseline shared across all dimensions.
+
+        Setup: user_baseline exists (knows svchost.exe), host_baseline does NOT.
+        Expected: user record sees process as not novel (known in user baseline).
+                  host record sees process as novel (no host baseline -> 0.0 default).
+        """
+        baseline = make_hospital_baseline()  # knows svchost.exe
+        reader = _make_mock_reader(user_baseline=baseline)  # only user baseline set
+        pipeline = FeaturePipeline(baseline_reader=reader)
+        event = make_hospital_event()  # process=svchost.exe (known in baseline)
+        records = pipeline.process_event(event)
+
+        user_record = next(r for r in records if r.entity_key.entity_type == "user")
+        host_record = next(r for r in records if r.entity_key.entity_type == "host")
+
+        # user has a baseline -> process_is_novel must be 0.0 (known process)
+        assert user_record.baseline_available is True
+        assert user_record.feature_vector.get("process_is_novel") == 0.0
+
+        # host has NO baseline -> process_is_novel is 0.0 (cold-start default, not novel)
+        # This is the correct cold-start behaviour: we cannot assert novelty without a baseline.
+        assert host_record.baseline_available is False
+        assert host_record.feature_vector.get("process_is_novel") == 0.0
 
 
 # ===========================================================================

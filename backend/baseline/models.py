@@ -41,9 +41,12 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+import structlog
 from pydantic import Field, field_validator
 
 from backend.shared.models import CyberShieldBaseModel
+
+logger = structlog.get_logger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -153,9 +156,28 @@ class NumericStats(CyberShieldBaseModel):
     p95: float | None = Field(default=None, description="95th percentile.")
     p99: float | None = Field(default=None, description="99th percentile.")
 
-    # Welford state — used by BaselineUpdater for incremental updates
-    # Stored so updates can continue from where the last build left off.
-    _welford_m2: float | None = None  # sum of squared deviations
+    # Welford state — used by BaselineUpdater for incremental updates.
+    # This is a proper Pydantic field so it survives JSON round-trips.
+    # Without this, incremental std becomes wrong after every save/load cycle.
+    welford_m2: float = Field(
+        default=0.0,
+        description=(
+            "Welford running sum of squared deviations (M2). "
+            "Used by BaselineUpdater to compute correct incremental std. "
+            "Preserved across save/load cycles."
+        ),
+    )
+
+    # Percentile staleness flag — set to True by BaselineUpdater after
+    # an incremental update, since exact percentiles require all observations.
+    percentiles_approximate: bool = Field(
+        default=False,
+        description=(
+            "True after an incremental update — percentiles (p25..p99) are "
+            "approximations kept from the last full build. "
+            "Trigger a full rebuild to restore exact percentiles."
+        ),
+    )
 
     @property
     def is_populated(self) -> bool:
@@ -611,6 +633,12 @@ class BaselineProfile(CyberShieldBaseModel):
             parts = storage_key.split("__", 1)
             if len(parts) == 2:  # noqa: PLR2004
                 keys.append(EntityKey(entity_type=parts[0], entity_id=parts[1]))
+            else:
+                logger.warning(
+                    "baseline_profile_malformed_storage_key",
+                    key=storage_key,
+                    detail="Expected 'type__id' format; key will be skipped.",
+                )
         return keys
 
     @property

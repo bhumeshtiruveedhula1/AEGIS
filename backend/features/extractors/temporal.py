@@ -105,10 +105,13 @@ class TemporalExtractor(BaseExtractor):
                 dow_idx = int(ts.weekday())
                 day_baseline_freq = daily[dow_idx] / total if dow_idx < len(daily) else 0.0
 
-            # Time since last seen
+            # Time since last seen — use the event's own timestamp, not wall-clock.
+            # This makes the feature deterministic for historical replay:
+            # the same event always produces the same time_since value
+            # regardless of when the pipeline is executed.
             if baseline.last_seen is not None:
-                now_utc = datetime.now(UTC)
-                delta = now_utc - baseline.last_seen
+                event_utc = event.timestamp.astimezone(UTC)
+                delta = event_utc - baseline.last_seen
                 hours = delta.total_seconds() / 3600.0
                 time_since = min(max(hours, 0.0), _MAX_HOURS_SINCE_SEEN)
 
