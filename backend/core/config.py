@@ -179,6 +179,29 @@ class Settings(BaseSettings):
     )
 
     # -----------------------------------------------------------------------
+    # Normalization Pipeline — Module 1.3
+    # -----------------------------------------------------------------------
+    norm_output_dir: Path = Field(
+        default=Path("./data/normalized"),
+        description="Directory for normalized JSONL output and pipeline reports.",
+    )
+    norm_error_dir: Path = Field(
+        default=Path("./data/normalized/errors"),
+        description="Directory for dead-letter (failed) event records.",
+    )
+    norm_max_lines_per_source: int = Field(
+        default=0,
+        ge=0,
+        description="Maximum lines read per source per pipeline run. "
+                    "0 = unlimited. Use in tests for speed.",
+    )
+    norm_overwrite_output: bool = Field(
+        default=False,
+        description="If True, truncate the output JSONL before each run. "
+                    "False = append (accumulate across runs).",
+    )
+
+    # -----------------------------------------------------------------------
     # CORS
     # -----------------------------------------------------------------------
     cors_allowed_origins: list[str] = Field(
@@ -189,8 +212,14 @@ class Settings(BaseSettings):
     # -----------------------------------------------------------------------
     # Feature Flags — enable modules as they are implemented
     # -----------------------------------------------------------------------
-    feature_ingestion_enabled: bool = Field(default=False)
-    feature_normalization_enabled: bool = Field(default=False)
+    feature_ingestion_enabled: bool = Field(
+        default=True,
+        description="[Module 1.3] Enable telemetry ingestion pipeline.",
+    )
+    feature_normalization_enabled: bool = Field(
+        default=True,
+        description="[Module 1.3] Enable log normalization pipeline.",
+    )
     feature_detection_enabled: bool = Field(default=False)
     feature_mitre_enabled: bool = Field(default=False)
     feature_graph_enabled: bool = Field(default=False)
@@ -226,7 +255,13 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def ensure_directories_exist(self) -> "Settings":
         """Create required directories if they do not exist."""
-        for directory in (self.data_dir, self.models_dir, self.reports_dir):
+        for directory in (
+            self.data_dir,
+            self.models_dir,
+            self.reports_dir,
+            self.norm_output_dir,
+            self.norm_error_dir,
+        ):
             directory.mkdir(parents=True, exist_ok=True)
         return self
 
