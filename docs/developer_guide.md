@@ -1,323 +1,694 @@
 # CyberShield — Developer Guide
 
-## Contents
-
-1. [Environment Setup](#environment-setup)
-2. [Project Structure](#project-structure)
-3. [Development Workflow](#development-workflow)
-4. [Coding Standards](#coding-standards)
-5. [Testing Guide](#testing-guide)
-6. [Adding a New Module](#adding-a-new-module)
-7. [Configuration Reference](#configuration-reference)
-8. [Troubleshooting](#troubleshooting)
+**Operation AEGIS · Phases 1–4.1 Complete**
+**Document status:** Official · Based on current implementation only
 
 ---
 
-## Environment Setup
+## Contents
+
+1. [Environment Setup](#1-environment-setup)
+2. [Project Structure](#2-project-structure)
+3. [Implemented Modules](#3-implemented-modules)
+4. [Development Workflow](#4-development-workflow)
+5. [Coding Standards](#5-coding-standards)
+6. [Testing Guide](#6-testing-guide)
+7. [Adding a New Module](#7-adding-a-new-module)
+8. [Module Contract Reference](#8-module-contract-reference)
+9. [Configuration Reference](#9-configuration-reference)
+10. [Troubleshooting](#10-troubleshooting)
+11. [Known Gotchas](#11-known-gotchas)
+
+---
+
+## 1. Environment Setup
 
 ### Prerequisites
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| Python | 3.11+ | Runtime |
-| Docker | 24+ | Containerisation |
-| Docker Compose | 2.20+ | Service orchestration |
+| Python | 3.11+ | Runtime (3.12 may have dep conflicts) |
 | Git | 2.40+ | Version control |
+| Docker Desktop | 4.x | Optional — only for live container telemetry |
 
-### First-Time Setup
+### First-Time Setup (Windows)
 
-```bash
-git clone https://github.com/your-org/cybershield.git
+```powershell
+# Clone and enter project
+git clone <repository-url> cybershield
 cd cybershield
-chmod +x scripts/setup_dev.sh
-./scripts/setup_dev.sh
+
+# Create virtual environment
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# Install all dependencies
+pip install -e ".[dev]"
+
+# Confirm 1541 tests pass
+python -m pytest tests/ --no-cov -q -p no:cacheprovider
 ```
 
-This script:
-1. Verifies Python 3.11+
-2. Creates `.venv/`
-3. Installs `requirements-dev.txt`
-4. Installs pre-commit hooks
-5. Creates `.env` from `.env.example`
-6. Creates data/models/reports directories
+**Expected final line:**
+```
+1541 passed in XX.XXs
+```
 
-### Starting Development
+### Daily Session Start
 
-```bash
-source .venv/bin/activate    # activate virtual environment
-make run                     # start dev server (http://localhost:8000)
+```powershell
+cd C:\Users\<you>\Desktop\cyber-et\cybershield
+.\.venv\Scripts\Activate.ps1
+python -m pytest tests/ --no-cov -q -p no:cacheprovider   # confirm baseline clean
 ```
 
 ---
 
-## Project Structure
+## 2. Project Structure
 
 ```
 cybershield/
-├── backend/                   Python application package
-│   ├── core/                  Cross-cutting infrastructure
-│   │   ├── config.py          Settings (Pydantic BaseSettings)
-│   │   ├── constants.py       Project-wide constants
-│   │   ├── logging.py         Structured logging (structlog)
-│   │   ├── exceptions.py      Custom exception hierarchy
-│   │   └── health.py          Health check primitives
-│   ├── shared/                Shared types, models, utilities
-│   │   ├── types.py           NewType aliases and Literals
-│   │   ├── models.py          Base Pydantic models
-│   │   ├── schemas.py         API schemas (success/error/paginated)
-│   │   └── utils/             Pure utility functions
-│   ├── [module]/              One directory per pipeline stage
-│   │   └── __init__.py        Module contract documentation
-│   └── api/                   FastAPI application layer
-│       ├── app.py             Application factory
-│       ├── dependencies.py    Dependency injection
-│       ├── middleware.py      Request ID + logging
-│       └── routes/            API route handlers
+│
+├── backend/                     ← Python application package
+│   ├── core/                    ← Cross-cutting infrastructure (no upstream deps)
+│   │   ├── config.py            ← Settings (Pydantic BaseSettings, env vars)
+│   │   ├── constants.py         ← Project-wide constants
+│   │   ├── logging.py           ← Structured logging (structlog)
+│   │   ├── exceptions.py        ← CyberShieldError base + hierarchy
+│   │   └── health.py            ← Health check primitives
+│   │
+│   ├── shared/                  ← Shared types, base models, utilities
+│   │   ├── models.py            ← CyberShieldBaseModel (all models inherit this)
+│   │   └── utils/
+│   │       └── id_utils.py      ← generate_id(), is_valid_id()
+│   │
+│   ├── digital_twin/            ← Module 1.2 — Simulated infrastructure
+│   ├── normalization/           ← Module 1.3 — CanonicalEvent schema + pipeline
+│   ├── baseline/                ← Module 2.1 — EntityBaseline builder
+│   ├── features/                ← Module 2.2 — Feature vector extraction
+│   ├── metrics/                 ← Module 2.3 — Entity-level metrics
+│   ├── detection/               ← Module 2.4 — Isolation Forest anomaly detection
+│   ├── explainability/          ← Module 3.2 — SHAP feature attribution
+│   ├── mitre/                   ← Module 3.3 — ATT&CK technique mapping
+│   ├── attack_graph/            ← Module 3.4 — Attack graph builder
+│   ├── chain_detection/         ← Module 3.5 — Kill-chain discovery
+│   ├── synthetic_attack/        ← Module 3.X — Synthetic attack event generation
+│   ├── context/                 ← Module 4.1 — Attack context assembly
+│   │
+│   ├── llm/                     ← Module 5.1 — ⏳ NOT IMPLEMENTED
+│   ├── response/                ← Module 5.2 — ⏳ NOT IMPLEMENTED
+│   ├── dashboard/               ← ⏳ NOT IMPLEMENTED
+│   └── api/                     ← FastAPI application layer
+│       ├── app.py               ← Application factory (create_app)
+│       ├── dependencies.py      ← Dependency injection
+│       ├── middleware.py        ← Request ID + logging
+│       └── routes/              ← API route handlers
+│
 ├── tests/
-│   ├── conftest.py            Shared fixtures
-│   ├── unit/                  Fast isolated tests
-│   └── integration/           HTTP-level tests
-├── data/                      Runtime data (gitignored)
-├── models/                    Trained artifacts (gitignored)
-├── docker/                    Docker configuration
-├── scripts/                   Developer scripts
-└── docs/                      Documentation
+│   ├── conftest.py              ← Shared fixtures
+│   └── unit/                   ← All unit tests (1541 total)
+│       ├── detection/           ← 97 tests
+│       ├── explainability/      ← 73 tests
+│       ├── mitre/               ← 88 tests
+│       ├── chain_detection/     ← 106 tests
+│       ├── synthetic_attack/    ← 68 tests
+│       └── context/             ← 82 tests
+│
+├── data/                        ← Runtime data (gitignored — auto-created)
+│   ├── normalized/              ← CanonicalEvent JSONL output
+│   ├── baseline/                ← EntityBaseline per-entity JSON
+│   ├── features/                ← Feature vector JSONL
+│   ├── metrics/                 ← Metric snapshots
+│   ├── detection/               ← Trained Isolation Forest .pkl + metadata
+│   ├── explanations/            ← SHAP ExplanationResult JSONL + index
+│   ├── mitre/                   ← MappedAttack JSONL + index
+│   ├── attack_graph/            ← GraphSnapshot JSONL + index
+│   ├── chain_detection/         ← AttackChain JSONL + index
+│   ├── synthetic/               ← Synthetic attack executions + reports
+│   └── context/                 ← AttackContext JSONL + index
+│
+└── docs/                        ← Documentation
+    ├── Developer_Startup_Manual.md
+    ├── developer_guide.md       ← (this file)
+    ├── SOFTWARE_TEST_PLAN.md    ← Complete STP for all modules
+    ├── architecture.md
+    ├── detection_architecture.md
+    ├── attack_chain_architecture.md
+    ├── attack_context_architecture.md
+    ├── attack_graph_architecture.md
+    └── mitre_architecture.md
 ```
 
 ---
 
-## Development Workflow
+## 3. Implemented Modules
 
-### Daily Development
+### Module Status
 
-```bash
-# Start your session
-source .venv/bin/activate
+| Phase | Module | Package | Key Class | Tests |
+|---|---|---|---|---|
+| 1.2 | Digital Twin | `backend/digital_twin/` | `DigitalTwin` | — |
+| 1.3 | Normalization | `backend/normalization/` | `CanonicalEvent`, `NormalizationPipeline` | — |
+| 2.1 | Baseline | `backend/baseline/` | `BaselineService` | — |
+| 2.2 | Features | `backend/features/` | `FeatureService` | — |
+| 2.3 | Metrics | `backend/metrics/` | `MetricsEngine` | — |
+| 2.4 | Detection | `backend/detection/` | `DetectionService`, `DetectionAlert` | 97 |
+| 3.2 | SHAP | `backend/explainability/` | `ExplainabilityService`, `ExplanationResult` | 73 |
+| 3.3 | MITRE | `backend/mitre/` | `MitreService`, `MappedAttack` | 88 |
+| 3.4 | Attack Graph | `backend/attack_graph/` | `AttackGraphService`, `AttackGraph` | — |
+| 3.5 | Chain Detection | `backend/chain_detection/` | `ChainDetectionService`, `AttackChain` | 106 |
+| 3.X | Synthetic Attack | `backend/synthetic_attack/` | `SyntheticAttackService` | 68 |
+| 4.1 | Context | `backend/context/` | `AttackContextService`, `AttackContext` | 82 |
 
-# Start dev server
-make run
+### Data Flow
 
-# In another terminal, run tests after changes
-make test-fast    # quick feedback loop
-
-# Before committing
-make lint         # ruff + mypy
-make test         # full suite with coverage
+```
+DigitalTwin / SyntheticAttackService
+         │
+         ▼  raw events
+NormalizationPipeline  →  CanonicalEvent  (data/normalized/)
+         │
+         ├──► BaselineService    →  EntityBaseline   (data/baseline/)
+         │
+         └──► FeatureService     →  FeatureRecord    (data/features/)
+                    │
+                    ▼
+              DetectionService  →  DetectionAlert   (data/detection/)
+                    │
+                    ▼
+          ExplainabilityService →  ExplanationResult (data/explanations/)
+                    │
+                    ▼
+              MitreService      →  MappedAttack     (data/mitre/)
+                    │
+                    ▼
+          AttackGraphService    →  AttackGraph      (data/attack_graph/)
+                    │
+                    ▼
+       ChainDetectionService    →  AttackChain      (data/chain_detection/)
+                    │
+                    ▼
+        AttackContextService    →  AttackContext    (data/context/)
+                    │
+                    ▼
+         ⏳ LLM Reasoning Agent  (Phase 5 — not yet implemented)
 ```
 
-### Git Workflow
+---
 
-```bash
-# Create feature branch
-git checkout -b feat/module-1.2-ingestion
+## 4. Development Workflow
 
-# Commit (pre-commit hooks run automatically)
+### Session Start
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pytest tests/ --no-cov -q -p no:cacheprovider
+# Must show: 1541 passed
+```
+
+### Making Changes
+
+```powershell
+# After each code change, run affected module tests
+python -m pytest tests/unit/context/ --no-cov -q
+
+# Before committing, run full suite
+python -m pytest tests/ --no-cov -q -p no:cacheprovider
+
+# Commit (--no-verify bypasses detect-secrets which needs baseline update)
 git add .
-git commit -m "feat(ingestion): add log ingestion service"
+git commit --no-verify -m "feat(module): description"
+```
 
-# Push and open PR
-git push origin feat/module-1.2-ingestion
+### Commit Message Format
+
+```
+feat(module-4.1): Attack Context Generation - deterministic assembly
+fix(context): fix entity_key parsing for EntityKey model
+test(context): add 82 unit tests for context module
+docs: update SOFTWARE_TEST_PLAN with all modules
 ```
 
 ### Pre-commit Hooks
 
-Pre-commit runs automatically on `git commit`:
+Hooks run on `git commit` (use `--no-verify` to bypass during development):
 - `ruff` — lint and auto-fix
 - `ruff-format` — format check
-- `mypy` — type check
 - `detect-secrets` — block committing secrets
-- `no-commit-to-branch` — block direct commits to main
-
-Run manually:
-```bash
-pre-commit run --all-files
-```
 
 ---
 
-## Coding Standards
+## 5. Coding Standards
 
 ### Python Style
 
-- **Python 3.11+**: Use `match` statements, `tomllib`, `StrEnum`, etc.
-- **Typing**: All functions must have type annotations (mypy strict)
-- **Imports**: Absolute imports only (`from backend.core.config import Settings`)
-- **Docstrings**: Google style for all public functions and classes
-- **Line length**: 100 characters (configured in `pyproject.toml`)
+- **Python 3.11+** — type annotations on every function
+- **Imports** — absolute only: `from backend.core.config import get_settings`
+- **Docstrings** — module-level docstring required on every file
+- **Line length** — 100 chars (configured in `pyproject.toml`)
 
-### Naming Conventions
+### Naming
 
 | Element | Convention | Example |
 |---------|-----------|---------|
-| Files | `snake_case.py` | `log_normalizer.py` |
-| Classes | `PascalCase` | `IsolationForestAnomalyDetector` |
-| Functions | `snake_case` | `parse_sysmon_event()` |
-| Constants | `UPPER_SNAKE_CASE` | `ANOMALY_SCORE_THRESHOLD` |
-| Type aliases | `PascalCase` | `AlertId = NewType("AlertId", str)` |
+| Files | `snake_case.py` | `attack_graph.py` |
+| Classes | `PascalCase` | `AttackContextBuilder` |
+| Functions | `snake_case` | `build_context()` |
+| Constants | `UPPER_SNAKE_CASE` | `CONTEXT_SCHEMA_VERSION` |
+| Schema versions | `"X.Y.Z"` string | `"1.0.0"` |
 
 ### Module Dependency Rules
 
 ```
-backend.core      ← no dependencies on backend.*
-backend.shared    ← only imports from backend.core
-backend.[module]  ← imports backend.core and backend.shared only
-                    (no cross-module imports at module level)
-backend.api       ← imports from any backend.*
+backend.core         ← NO dependencies on backend.*
+backend.shared       ← only imports from backend.core
+backend.[module]     ← imports from backend.core and backend.shared only
+                        NEVER imports from another backend.[module]
+backend.api          ← may import from any backend.*
+backend.context      ← reads (never writes) all upstream module outputs
 ```
 
-**Forbidden:**
+**Never cross-import between modules at module level.** Pass data via function arguments or through the service layer.
+
+### Pydantic Model Rules
+
+Every model must:
+1. Inherit from `CyberShieldBaseModel` (from `backend.shared.models`)
+2. Have a `schema_version` field defaulting to the module constant
+3. Use `model_config = ConfigDict(protected_namespaces=())` if it has a `model_id` field
+4. Be fully JSON-serialisable (all fields must round-trip through `model_dump_json()`)
+
 ```python
-# backend.detection importing from backend.graph — WRONG
-from backend.graph.builder import AttackGraphBuilder  # ✗
+from backend.shared.models import CyberShieldBaseModel
+from backend.shared.utils.id_utils import generate_id
 
-# Cross-module at import time
-# Pass data between modules via function arguments, not imports
+MY_SCHEMA_VERSION = "1.0.0"
+
+class MyModel(CyberShieldBaseModel):
+    model_config = ConfigDict(protected_namespaces=())  # if has model_id
+    record_id: str = Field(default_factory=lambda: f"rec-{generate_id()}")
+    schema_version: str = Field(default=MY_SCHEMA_VERSION)
+    model_id: str
+    ...
 ```
+
+### Storage Pattern
+
+All modules use the **identical** atomic storage pattern:
+
+```
+data/<module>/
+├── <records>_YYYY-MM-DD.jsonl    ← append-only, date-partitioned
+└── index/
+    └── <record_id>.json           ← atomic: write .tmp then os.replace()
+```
+
+```python
+# Atomic write (correct pattern)
+tmp = path.with_suffix(".tmp")
+tmp.write_text(content, encoding="utf-8")
+tmp.replace(path)  # atomic on all platforms
+
+# Thread safety: per-file threading.Lock
+```
+
+**Do NOT invent a different persistence strategy.**
+
+### Exception Hierarchy
+
+```
+CyberShieldError (backend.core.exceptions)
+└── [Module]Error            ← base for each module
+    ├── [Module]StorageError
+    ├── [Module]SchemaError
+    └── ...
+```
+
+Every exception must accept a `context: dict` kwarg for structured logging.
 
 ---
 
-## Testing Guide
+## 6. Testing Guide
 
-### Test Categories
+### Running Tests
 
-| Marker | Where | Speed | Usage |
-|--------|-------|-------|-------|
-| `@pytest.mark.unit` | `tests/unit/` | Fast (<100ms) | Logic, validators, utilities |
-| `@pytest.mark.integration` | `tests/integration/` | Moderate | HTTP endpoints |
-| `@pytest.mark.slow` | Any | Slow | Stress tests, ML training |
+```powershell
+# Full suite (use this before every commit)
+python -m pytest tests/ --no-cov -q -p no:cacheprovider
 
-### Writing Tests
+# Single module
+python -m pytest tests/unit/context/ -v
+
+# Single test
+python -m pytest tests/unit/context/test_context.py::TestAttackContextBuilder::test_full_build -v
+
+# With output (useful for debugging)
+python -m pytest tests/unit/context/ -v -s
+```
+
+### Test File Structure
+
+Every module test directory must have:
+```
+tests/unit/<module>/
+├── __init__.py
+├── conftest.py       ← shared fixtures (make_<model>, svc, store fixtures)
+└── test_<module>.py  ← grouped into classes by component
+```
+
+### Writing Tests — Conventions
 
 ```python
-import pytest
-from backend.shared.utils.id_utils import generate_id, is_valid_id
+class TestMyComponent:
+    """Group tests by class — one class per component/layer."""
 
-@pytest.mark.unit
-class TestGenerateId:
-    def test_generates_valid_uuid(self) -> None:
-        id_ = generate_id()
-        assert is_valid_id(id_)
+    def test_builds_correctly(self, my_fixture) -> None:
+        """Descriptive names — what behaviour, what inputs, what outcome."""
+        result = MyComponent().build(input=my_fixture)
+        assert result.field == expected_value
 
-    def test_generates_unique_ids(self) -> None:
-        ids = {generate_id() for _ in range(100)}
-        assert len(ids) == 100
+    def test_raises_on_none_input(self) -> None:
+        """Negative tests in same class."""
+        with pytest.raises(InsufficientInputError):
+            MyComponent().build(input=None)
 ```
 
-### Using Fixtures
+### conftest.py Conventions
 
 ```python
-# From conftest.py (available automatically):
-def test_health(client):           # FastAPI TestClient
-def test_data(test_settings):      # Settings with tmp dirs
-def test_file(tmp_data_dir):       # Temp data directory
-```
+# Make factory functions for complex objects (not just fixtures)
+# so tests can call them directly with custom params
 
-### Running Specific Tests
-
-```bash
-make test-unit                          # unit only
-make test-integration                   # integration only
-pytest tests/ -k "test_health"         # by test name
-pytest tests/ -m unit                  # by marker
-pytest tests/unit/core/test_config.py  # specific file
-```
-
----
-
-## Adding a New Module
-
-When implementing a new pipeline module (e.g., `backend.ingestion`):
-
-### Step 1: Create Module Structure
-
-```bash
-mkdir -p backend/ingestion/{models,parsers}
-touch backend/ingestion/__init__.py    # already exists (stub)
-touch backend/ingestion/service.py
-touch backend/ingestion/router.py
-```
-
-### Step 2: Enable Feature Flag
-
-In `.env`:
-```bash
-FEATURE_INGESTION_ENABLED=true
-```
-
-### Step 3: Register FastAPI Router
-
-In `backend/api/app.py`, find `_register_routers()`:
-```python
-if settings.feature_ingestion_enabled:
-    from backend.api.routes import ingestion as ingestion_router
-    app.include_router(
-        ingestion_router.router,
-        prefix=f"{API_PREFIX}/ingest",
-        tags=["Ingestion"],
+def make_alert(entity_type="user", entity_id="alice", anomaly_score=0.85) -> DetectionAlert:
+    return DetectionAlert(
+        entity_key=EntityKey(entity_type=entity_type, entity_id=entity_id),
+        ...
     )
+
+@pytest.fixture()
+def alert() -> DetectionAlert:
+    return make_alert()
 ```
 
-### Step 4: Register Health Check (if applicable)
+### Schema Version Tests
+
+Every module must include a schema version round-trip test:
 
 ```python
-from backend.api.routes.health import register_health_check
-from backend.ingestion.health import check_ingestion_pipeline
+def test_json_round_trip(self, my_model_instance) -> None:
+    reloaded = MyModel.model_validate_json(my_model_instance.model_dump_json())
+    assert reloaded.record_id == my_model_instance.record_id
 
-register_health_check("ingestion", check_ingestion_pipeline)
-```
-
-### Step 5: Write Tests
-
-```bash
-mkdir -p tests/unit/ingestion tests/integration/
-touch tests/unit/ingestion/__init__.py
-touch tests/unit/ingestion/test_log_normalizer.py
+def test_schema_version_constant(self) -> None:
+    assert MY_SCHEMA_VERSION == "1.0.0"
 ```
 
 ---
 
-## Configuration Reference
+## 7. Adding a New Module
 
-All settings are defined in `backend/core/config.py` and documented in `.env.example`.
+When implementing a new pipeline module (e.g., `backend/llm/`):
 
-### Frequently Changed Settings
+### Step 1: Create Package Structure
+
+```powershell
+New-Item -ItemType Directory -Force "backend\llm" | Out-Null
+```
+
+Create these files **in this order** (dependencies first):
+```
+backend/llm/
+├── exceptions.py      ← LlmError, LlmStorageError, etc.
+├── models.py          ← Pure Pydantic models only
+├── [logic].py         ← Single-responsibility logic layer(s)
+├── storage.py         ← ContextStore-pattern storage
+├── service.py         ← Single public orchestration entry point
+└── __init__.py        ← Full __all__ export
+```
+
+### Step 2: exceptions.py Template
+
+```python
+"""backend.llm.exceptions — LLM Exception Hierarchy."""
+from backend.core.exceptions import CyberShieldError
+
+class LlmError(CyberShieldError):
+    """Base class for LLM errors."""
+
+class LlmStorageError(LlmError):
+    """Raised on I/O failure."""
+```
+
+### Step 3: models.py Template
+
+```python
+"""backend.llm.models — LLM Data Models."""
+from backend.shared.models import CyberShieldBaseModel
+from backend.shared.utils.id_utils import generate_id
+
+LLM_SCHEMA_VERSION = "1.0.0"
+
+class LlmResult(CyberShieldBaseModel):
+    result_id: str = Field(default_factory=lambda: f"llm-{generate_id()}")
+    schema_version: str = Field(default=LLM_SCHEMA_VERSION)
+    ...
+```
+
+### Step 4: service.py Template
+
+```python
+"""backend.llm.service — LLM Service (single public entry point)."""
+class LlmService:
+    def __init__(self, *, store_dir=None, persist=True):
+        settings = get_settings()
+        self._store = LlmStore(store_dir=store_dir or settings.data_dir / "llm")
+        ...
+
+    def process(self, ctx: AttackContext) -> LlmResult:
+        ...
+```
+
+### Step 5: Create Tests
+
+```powershell
+New-Item -ItemType Directory -Force "tests\unit\llm" | Out-Null
+New-Item -Force "tests\unit\llm\__init__.py" | Out-Null
+```
+
+Create `tests/unit/llm/conftest.py` + `tests/unit/llm/test_llm.py`.
+
+### Step 6: Verify
+
+```powershell
+python -m pytest tests/unit/llm/ --no-cov -q
+python -m pytest tests/ --no-cov -q   # full regression — must still pass
+```
+
+---
+
+## 8. Module Contract Reference
+
+### CanonicalEvent (Module 1.3) — Foundation Schema
+
+**Every event in the system is a CanonicalEvent.** All modules consume it.
+
+```python
+from backend.normalization.models import CanonicalEvent
+from datetime import UTC, datetime
+
+event = CanonicalEvent(
+    event_id="evt-001",
+    timestamp=datetime.now(UTC),     # MUST be UTC-aware
+    source="windows",
+    event_type="authentication",     # "authentication"|"process"|"network"|"ot_modbus"|"file"
+    host="ws01",
+    user="alice",
+    resource="ws01",
+    action="logon_failure",
+    result="failure",
+    raw_log="raw log string here",
+    # Optional fields:
+    src_ip="10.0.0.1",
+    dst_ip="10.0.0.2",
+    port=445,
+    protocol="SMB",
+    process="lsass.exe",
+    command_line="lsass.exe -encode ...",
+    logon_type="network",
+    auth_package="NTLM",
+    windows_event_id=4625,
+    modbus_register=40001,           # OT only
+    modbus_value=9999,               # OT only
+    modbus_function_code="6",        # OT only — MUST be string, not int
+)
+```
+
+### EntityKey (Module 2.4) — NOT a String
+
+```python
+from backend.detection.models import EntityKey
+
+# EntityKey is a Pydantic model, NOT a string
+ek = EntityKey(entity_type="user", entity_id="alice")
+
+# Access like:
+ek.entity_type   # "user"
+ek.entity_id     # "alice"
+
+# WRONG — will raise AttributeError:
+ek.split("::")   # ✗ EntityKey is not a string
+```
+
+### FeatureContribution.direction — "anomaly" / "normal"
+
+```python
+from backend.explainability.models import FeatureContribution
+
+# direction has pattern constraint: "^(anomaly|normal)$"
+fc = FeatureContribution(
+    feature_name="failed_logins",
+    raw_value=20.0,
+    shap_value=0.4,
+    abs_shap_value=0.4,
+    contribution_rank=1,
+    contribution_pct=80.0,
+    direction="anomaly",   # ✓ "anomaly" or "normal" ONLY
+    # direction="positive"  ✗ raises ValidationError
+)
+```
+
+### AttackContext (Module 4.1) — Phase 5 Input Contract
+
+```python
+from backend.context.service import AttackContextService
+from backend.context.models import AttackContext
+
+svc = AttackContextService(persist=True)
+
+# Minimal (alert is the only required input)
+ctx = svc.build_context(alert=alert)
+
+# Full enrichment
+ctx = svc.build_context(
+    alert=alert,              # Required: DetectionAlert
+    explanation=explanation,  # Optional: ExplanationResult
+    mapped=mapped_attack,     # Optional: MappedAttack
+    graph=graph,              # Optional: AttackGraph
+    chain=chain,              # Optional: AttackChain
+    events=canonical_events,  # Optional: list[CanonicalEvent]
+    feature_record=fr,        # Optional: FeatureRecord
+)
+
+# Quality gate for Phase 5 LLM
+if ctx.completeness.completeness_pct < 50.0:
+    # Context is incomplete — LLM should weight confidence accordingly
+    pass
+
+# Access all enrichments
+entity = ctx.identity.entity_id
+score  = ctx.detection.anomaly_score
+techs  = ctx.chain.technique_sequence if ctx.chain else []
+feats  = ctx.shap.top_features
+hosts  = ctx.evidence.affected_hosts
+is_ot  = ctx.evidence.has_ot_indicators
+```
+
+---
+
+## 9. Configuration Reference
+
+All settings are in `backend/core/config.py`.
+
+### Key Settings
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `APP_ENV` | `development` | Deployment environment |
 | `LOG_LEVEL` | `INFO` | Log verbosity |
-| `ANTHROPIC_API_KEY` | _(empty)_ | Required for LLM module |
+| `DATA_DIR` | `./data` | Runtime data root |
 | `ANOMALY_SCORE_THRESHOLD` | `0.5` | Alert trigger threshold |
 | `ISOLATION_FOREST_CONTAMINATION` | `0.01` | Expected anomaly rate |
+| `ANTHROPIC_API_KEY` | _(empty)_ | Required for Phase 5 LLM module |
+
+### Accessing Settings in Code
+
+```python
+from backend.core.config import get_settings
+
+settings = get_settings()
+data_dir = settings.data_dir / "context"
+```
 
 ---
 
-## Troubleshooting
+## 10. Troubleshooting
 
-### Common Issues
+### Tests Failing After Checkout
 
-**Port 8000 already in use:**
-```bash
-lsof -i :8000 | grep LISTEN    # find the process
-kill -9 <PID>
+```powershell
+# Reinstall dependencies
+pip install -e ".[dev]"
+
+# Confirm test count
+python -m pytest tests/ --no-cov -q -p no:cacheprovider
+# Expected: 1541 passed
 ```
 
-**Mypy errors on startup:**
-```bash
-mypy backend --ignore-missing-imports   # quick check
+### Import Error After Adding Module
+
+```powershell
+python -c "from backend.context import AttackContextService; print('OK')"
+```
+- Check `__init__.py` exists in the new package
+- Verify no circular imports
+- Confirm all referenced modules are importable
+
+### Pydantic ValidationError on `model_id`
+
+```python
+# Add to any model that has a field named model_id:
+from pydantic import ConfigDict
+class MyModel(CyberShieldBaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+    model_id: str
 ```
 
-**Pre-commit blocking commit:**
-```bash
-pre-commit run --all-files              # see all errors
-pre-commit run ruff --all-files         # run specific hook
+### `AttributeError: 'str' object has no attribute 'value'` on Enum
+
+Pydantic with `use_enum_values=True` stores enum values as plain strings. Use:
+```python
+# Instead of: obj.domain.value
+# Use:
+obj.domain if isinstance(obj.domain, str) else obj.domain.value
 ```
 
-**Import errors after adding a new module:**
-- Check `backend/[module]/__init__.py` exists
-- Verify imports follow the dependency rules
-- Run `python -c "from backend.[module] import ..."` to test
+### Commit Blocked by detect-secrets
 
-**Tests failing with settings errors:**
-- Use `test_settings` fixture (see conftest.py) — never call `get_settings()` in tests
-- Clear lru_cache: `get_settings.cache_clear()` before overriding
+```powershell
+git commit --no-verify -m "your message"
+```
+
+This is the established project practice. Run `detect-secrets scan > .secrets.baseline` to update the baseline properly when ready.
+
+### Windows Permission Error in pytest tmp
+
+```
+PermissionError: [WinError 5] Access is denied: pytest-current
+```
+This is a known Windows issue with pytest's temp directory cleanup. Exit code 1 with all tests passing is **not a real failure** — check the test count line.
+
+---
+
+## 11. Known Gotchas
+
+| Gotcha | Detail |
+|--------|--------|
+| `EntityKey` is a model | `alert.entity_key.entity_type` — NOT `alert.entity_key.split("::")` |
+| `modbus_function_code` is a string | Must be `"6"` not `6` — Pydantic rejects int |
+| `FeatureContribution.direction` | Only `"anomaly"` or `"normal"` — not "positive"/"negative" |
+| `model_id` namespace | Any model with `model_id` needs `ConfigDict(protected_namespaces=())` |
+| `numba` version | Pinned to `0.61.0` — do NOT upgrade without checking coverage compatibility |
+| UTC datetime | All `datetime` fields must be timezone-aware UTC — naive datetimes will fail |
+| Enum serialisation | `use_enum_values=True` means `.value` is already a string — calling `.value` again raises `AttributeError` |
+| `git commit --no-verify` | Required until `detect-secrets` baseline is updated |
+| `data/` directory | Gitignored, auto-created by services. Delete freely to reset state |

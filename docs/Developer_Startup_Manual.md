@@ -1,7 +1,8 @@
 # CyberShield — Developer Startup Manual
 
-**Operation AEGIS · Phase 2 Complete**
+**Operation AEGIS · Phases 1–4.1 Complete**
 **Document status:** Official · Based on current implementation only
+**Tests passing:** 1541 / 0 failures | **Branch:** `phase-3-behavioral-detection`
 
 ---
 
@@ -19,13 +20,20 @@
 10. [Baseline Generation Verification](#10-baseline-generation-verification)
 11. [Feature Generation Verification](#11-feature-generation-verification)
 12. [Metrics Verification](#12-metrics-verification)
-13. [Directory Structure After Each Stage](#13-directory-structure-after-each-stage)
-14. [Common Setup Problems](#14-common-setup-problems)
-15. [Resetting the Development Environment](#15-resetting-the-development-environment)
-16. [Updating After New Commits](#16-updating-after-new-commits)
-17. [Git Workflow for Contributors](#17-git-workflow-for-contributors)
-18. [Current Implementation Status — Phase 2 Complete](#18-current-implementation-status--phase-2-complete)
-19. [Not Yet Implemented — Phases 3–9](#19-not-yet-implemented--phases-39)
+13. [Detection Verification (Isolation Forest)](#13-detection-verification-isolation-forest)
+14. [SHAP Explainability Verification](#14-shap-explainability-verification)
+15. [MITRE ATT&CK Mapper Verification](#15-mitre-attck-mapper-verification)
+16. [Attack Graph Verification](#16-attack-graph-verification)
+17. [Attack Chain Verification](#17-attack-chain-verification)
+18. [Synthetic Attack Generation Verification](#18-synthetic-attack-generation-verification)
+19. [Attack Context Verification](#19-attack-context-verification)
+20. [Directory Structure After Each Stage](#20-directory-structure-after-each-stage)
+21. [Common Setup Problems](#21-common-setup-problems)
+22. [Resetting the Development Environment](#22-resetting-the-development-environment)
+23. [Updating After New Commits](#23-updating-after-new-commits)
+24. [Git Workflow for Contributors](#24-git-workflow-for-contributors)
+25. [Current Implementation Status — Phases 1–4.1 Complete](#25-current-implementation-status--phases-14-complete)
+26. [Not Yet Implemented — Phase 5+](#26-not-yet-implemented--phase-5)
 
 ---
 
@@ -1725,9 +1733,199 @@ The following routes are commented out in `backend/api/app.py` pending module im
 
 ### Database Schema (Alembic Migrations)
 
-**Not implemented as of Phase 2.**
+**Not implemented as of Phase 4.1.**
 
-`DATABASE_URL` is configured and SQLAlchemy/Alembic are installed. No schema migrations exist yet. All pipeline stages currently use flat files (JSONL/JSON). A relational database will be added when modules that require persistent relational storage are implemented.
+`DATABASE_URL` is configured and SQLAlchemy/Alembic are installed. No schema migrations exist yet. All pipeline stages currently use flat files (JSONL/JSON). A relational database will be added when modules requiring persistent relational storage are implemented.
+
+---
+
+## 13. Detection Verification (Isolation Forest)
+
+**Purpose:** Confirm the Isolation Forest anomaly scorer is functional.
+
+```powershell
+python -c "
+from backend.detection.service import DetectionService
+svc = DetectionService()
+status = svc.get_model_status()
+print('Model status:', status)
+"
+```
+
+**Expected output (no model trained yet):**
+```
+Model status: {'trained': False, 'version': None}
+```
+
+**Expected output (model trained):**
+```
+Model status: {'trained': True, 'version': 'v1', 'feature_dim': 56}
+```
+
+**Run detection unit tests:**
+```powershell
+python -m pytest tests/unit/detection/ --no-cov -q
+# Expected: 97 passed
+```
+
+---
+
+## 14. SHAP Explainability Verification
+
+**Purpose:** Confirm the SHAP explainability layer initialises correctly.
+
+```powershell
+python -m pytest tests/unit/explainability/ --no-cov -q
+# Expected: 73 passed
+```
+
+**Manual import check:**
+```powershell
+python -c "from backend.explainability import ExplainabilityService; print('SHAP OK')"
+```
+
+---
+
+## 15. MITRE ATT&CK Mapper Verification
+
+**Purpose:** Confirm the ATT&CK knowledge base loads and techniques are queryable.
+
+```powershell
+python -c "
+from backend.mitre.knowledge_base import MitreKnowledgeBase
+kb = MitreKnowledgeBase()
+print('Techniques loaded:', len(kb.get_all_techniques()))
+print('T1110:', kb.get_technique('T1110').name)
+print('Version:', kb.version)
+"
+```
+
+**Expected output:**
+```
+Techniques loaded: 36
+T1110: Brute Force
+Version: ATT&CK v15 (2024-10-01)
+```
+
+```powershell
+python -m pytest tests/unit/mitre/ --no-cov -q
+# Expected: 88 passed
+```
+
+---
+
+## 16. Attack Graph Verification
+
+**Purpose:** Confirm the attack graph builder initialises and the package imports correctly.
+
+```powershell
+python -c "from backend.attack_graph import AttackGraphService; print('Attack Graph OK')"
+```
+
+---
+
+## 17. Attack Chain Verification
+
+**Purpose:** Confirm the attack chain detector initialises correctly.
+
+```powershell
+python -m pytest tests/unit/chain_detection/ --no-cov -q
+# Expected: 106 passed
+```
+
+```powershell
+python -c "from backend.chain_detection import ChainDetectionService; print('Chain Detection OK')"
+```
+
+---
+
+## 18. Synthetic Attack Generation Verification
+
+**Purpose:** Confirm all 10 attack templates generate correctly.
+
+```powershell
+python -c "
+from backend.synthetic_attack import SyntheticAttackService
+svc = SyntheticAttackService(persist=False, seed=42)
+for tid in svc.list_templates():
+    r = svc.generate(tid, 'host1', 'user1')
+    print(f'{tid}: {r.total_events} events')
+print('All templates OK')
+"
+```
+
+**Expected output:**
+```
+brute_force_auth: 21 events
+credential_stuffing: 31 events
+lateral_movement_smb: 9 events
+privilege_escalation_token: 3 events
+persistence_scheduled_task: 2 events
+command_execution_powershell: 4 events
+network_discovery_scan: 50 events
+data_exfiltration_http: 15 events
+ot_register_manipulation: 17 events
+full_kill_chain_it: 26 events
+All templates OK
+```
+
+```powershell
+python -m pytest tests/unit/synthetic_attack/ --no-cov -q
+# Expected: 68 passed
+```
+
+---
+
+## 19. Attack Context Verification
+
+**Purpose:** Confirm Module 4.1 builds a valid AttackContext from a minimal alert.
+
+```powershell
+python -c "
+from datetime import UTC, datetime
+from backend.detection.models import DetectionAlert, EntityKey
+from backend.context.service import AttackContextService
+
+alert = DetectionAlert(
+    model_id='iso-v1',
+    entity_key=EntityKey(entity_type='user', entity_id='alice'),
+    event_id='evt-001',
+    event_type='authentication', event_source='windows',
+    event_timestamp=datetime.now(UTC),
+    event_host='ws01', event_user='alice',
+    anomaly_score=0.85, raw_if_score=-0.12,
+    threshold_used=0.5, is_alert=True,
+    feature_dimension=10, raw_feature_values={'failed_logins': 20.0},
+    novelty_count=2, baseline_available=True,
+)
+
+svc = AttackContextService(persist=False)
+ctx = svc.build_context(alert=alert)
+print('Context ID:', ctx.context_id[:20])
+print('Anomaly score:', ctx.detection.anomaly_score)
+print('Completeness:', ctx.completeness.completeness_pct, '%')
+print('Entity:', ctx.identity.entity_type, ctx.identity.entity_id)
+print('Missing:', [m.component for m in ctx.completeness.missing])
+"
+```
+
+**Expected output:**
+```
+Context ID: ctx-XXXXXXXX-XXXX-
+Anomaly score: 0.85
+Completeness: 33.3 %
+Entity: user alice
+Missing: ['shap', 'mitre', 'graph', 'chain', 'timeline', 'evidence']
+```
+
+```powershell
+python -m pytest tests/unit/context/ --no-cov -q
+# Expected: 82 passed
+```
+
+---
+
+## 20. Directory Structure After Each Stage
 
 ---
 
@@ -1739,10 +1937,7 @@ The following routes are commented out in `backend/api/app.py` pending module im
 # Activate environment (every new terminal)
 .\.venv\Scripts\Activate.ps1
 
-# Verify environment
-python verify_environment.py
-
-# Run all tests
+# Verify all 1541 tests pass
 python -m pytest tests/ --no-cov -q -p no:cacheprovider
 
 # Start API server
@@ -1751,17 +1946,30 @@ python -m uvicorn backend.api.app:create_app --factory --port 8000 --reload
 # Health check
 Invoke-RestMethod http://localhost:8000/health
 
-# Generate telemetry (no Docker)
-# (run the full script from Section 8.2)
+# Run individual module tests
+python -m pytest tests/unit/detection/ --no-cov -q     # 97 tests
+python -m pytest tests/unit/explainability/ --no-cov -q # 73 tests
+python -m pytest tests/unit/mitre/ --no-cov -q          # 88 tests
+python -m pytest tests/unit/chain_detection/ --no-cov -q # 106 tests
+python -m pytest tests/unit/synthetic_attack/ --no-cov -q # 68 tests
+python -m pytest tests/unit/context/ --no-cov -q        # 82 tests
 
-# Run normalization
-python -c "from backend.digital_twin.registry import get_registry; from backend.normalization.pipeline import NormalizationPipeline; r=get_registry(); p=NormalizationPipeline(r); rpt=p.run(); print(f'{rpt.total_events_normalized} events normalized')"
+# Verify MITRE knowledge base
+python -c "from backend.mitre.knowledge_base import MitreKnowledgeBase; kb=MitreKnowledgeBase(); print(len(kb.get_all_techniques()), 'techniques loaded')"
 
-# Run baseline builder
-python -c "from backend.baseline.service import BaselineService; s=BaselineService(); r=s.build_from_normalized_output(); print(f'{r.entities_built} entities built')"
+# Verify synthetic attack templates (all 10)
+python -c "from backend.synthetic_attack import SyntheticAttackService; svc=SyntheticAttackService(persist=False,seed=42); [print(f'{t}: {svc.generate(t,\"h\",\"u\").total_events}') for t in svc.list_templates()]"
 
-# Run feature extraction
-python -c "from backend.features.service import FeatureService; s=FeatureService(); r=s.extract_from_normalized_output(); print(f'{r.total_records_extracted} feature records extracted')"
+# Build a minimal AttackContext
+python -c "
+from datetime import UTC, datetime
+from backend.detection.models import DetectionAlert, EntityKey
+from backend.context.service import AttackContextService
+alert = DetectionAlert(model_id='iso-v1', entity_key=EntityKey(entity_type='user',entity_id='alice'), event_id='e1', event_type='auth', event_source='win', event_timestamp=datetime.now(UTC), event_host='ws01', event_user='alice', anomaly_score=0.85, raw_if_score=-0.1, threshold_used=0.5, is_alert=True, feature_dimension=10, raw_feature_values={}, novelty_count=0, baseline_available=True)
+svc = AttackContextService(persist=False)
+ctx = svc.build_context(alert=alert)
+print('context_id:', ctx.context_id[:20], '| completeness:', ctx.completeness.completeness_pct, '%')
+"
 ```
 
 ### Key Paths
@@ -1774,12 +1982,55 @@ python -c "from backend.features.service import FeatureService; s=FeatureService
 | `requirements-dev.txt` | Pinned dev + prod dependencies |
 | `backend/core/config.py` | Settings class (all environment variables documented) |
 | `backend/api/app.py` | FastAPI application factory |
-| `data/digital_twin/` | Raw telemetry JSONL from Digital Twin containers |
-| `data/normalized/` | Canonical normalized events (CanonicalEvent JSONL) |
-| `data/baseline/` | Behavioral baseline profiles (per-entity JSON) |
-| `data/features/` | 56-dimensional feature vectors (JSONL) |
-| `data/metrics/` | Metric snapshots and append-only history |
-| `reports/coverage/index.html` | HTML coverage report |
+| `data/normalized/` | CanonicalEvent JSONL from normalization pipeline |
+| `data/baseline/` | EntityBaseline JSON per entity |
+| `data/features/` | FeatureRecord JSONL (56-dimensional vectors) |
+| `data/metrics/` | Metric snapshots and history |
+| `data/detection/` | Trained Isolation Forest model (.pkl + metadata.json) |
+| `data/explanations/` | SHAP ExplanationResult JSONL + index/ |
+| `data/mitre/` | MappedAttack JSONL + index/ |
+| `data/attack_graph/` | AttackGraph snapshots JSONL + index/ |
+| `data/chain_detection/` | AttackChain JSONL + index/ |
+| `data/synthetic/` | Synthetic attack execution records |
+| `data/context/` | AttackContext JSONL + index/ |
+| `docs/SOFTWARE_TEST_PLAN.md` | Complete STP for all modules |
+| `docs/attack_context_architecture.md` | Module 4.1 architecture |
+| `docs/developer_guide.md` | Coding standards, contracts, gotchas |
+
+---
+
+## 25. Current Implementation Status — Phases 1–4.1 Complete
+
+| Phase | Module | Package | Tests | Status |
+|---|---|---|---|---|
+| 1.2 | Digital Twin | `backend/digital_twin/` | — | ✅ Complete |
+| 1.3 | Normalization | `backend/normalization/` | — | ✅ Complete |
+| 2.1 | Baseline Generator | `backend/baseline/` | — | ✅ Complete |
+| 2.2 | Feature Engine | `backend/features/` | — | ✅ Complete |
+| 2.3 | Metrics Engine | `backend/metrics/` | — | ✅ Complete |
+| 2.4 | Isolation Forest | `backend/detection/` | 97 | ✅ Complete |
+| 3.2 | SHAP Explainability | `backend/explainability/` | 73 | ✅ Complete |
+| 3.3 | MITRE ATT&CK Mapper | `backend/mitre/` | 88 | ✅ Complete |
+| 3.4 | Attack Graph Builder | `backend/attack_graph/` | — | ✅ Complete |
+| 3.5 | Attack Chain Detection | `backend/chain_detection/` | 106 | ✅ Complete |
+| 3.X | Synthetic Attack Gen | `backend/synthetic_attack/` | 68 | ✅ Complete |
+| 4.1 | Attack Context | `backend/context/` | 82 | ✅ Complete |
+| **Total** | | | **1541** | **✅** |
+
+---
+
+## 26. Not Yet Implemented — Phase 5+
+
+The following modules are **planned but not implemented**. Do not attempt to use them.
+
+| Module | Package | Planned Input | Status |
+|--------|---------|---------------|---------|
+| LLM Reasoning Agent | `backend/llm/` | `AttackContext` | ⏳ Phase 5 |
+| Response Orchestrator | `backend/response/` | LLM output | ⏳ Phase 5 |
+| Human Approval | TBD | Response plan | ⏳ Phase 5 |
+| Dashboard | `backend/dashboard/` | All module outputs | ⏳ Phase 5 |
+| Audit Ledger | TBD | All decisions | ⏳ Phase 5 |
+| SOAR Integration | TBD | Approved actions | ⏳ Phase 5 |
 
 ---
 
