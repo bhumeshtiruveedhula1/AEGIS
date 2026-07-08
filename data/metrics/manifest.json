@@ -1,0 +1,17 @@
+{
+  "last_updated": "2026-07-07T14:03:19.805597+00:00",
+  "schema_version": "1.0.0",
+  "latest_snapshot_id": "6be3ba10-1125-4f6f-a59b-c66d7a8b1636",
+  "total_snapshots": 1,
+  "entries": [
+    {
+      "record_id": "57f8ff74-dd6d-4131-aff6-f39c78dc7674",
+      "snapshot_id": "6be3ba10-1125-4f6f-a59b-c66d7a8b1636",
+      "collected_at": "2026-07-07T14:03:19.795143+00:00",
+      "schema_version": "1.0.0",
+      "computed_metrics": 9,
+      "unavailable_metrics": 14,
+      "tags": {}
+    }
+  ]
+}

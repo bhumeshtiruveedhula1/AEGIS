@@ -6,8 +6,6 @@ Unit tests for backend.core.logging configuration.
 
 from __future__ import annotations
 
-import structlog
-
 from backend.core.logging import configure_logging, get_logger, get_request_logger
 
 
@@ -34,7 +32,13 @@ class TestGetLogger:
 
     def test_returns_bound_logger(self) -> None:
         logger = get_logger(__name__)
-        assert isinstance(logger, structlog.BoundLoggerBase)
+        # structlog.get_logger() returns BoundLoggerLazyProxy (private internal class)
+        # not a subclass of BoundLoggerBase when using the default lazy configuration.
+        # Check for the standard logging API methods instead (duck typing).
+        assert hasattr(logger, "info")
+        assert hasattr(logger, "debug")
+        assert hasattr(logger, "warning")
+        assert hasattr(logger, "error")
 
     def test_different_names_return_different_loggers(self) -> None:
         logger_a = get_logger("module.a")

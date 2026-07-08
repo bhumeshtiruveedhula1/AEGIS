@@ -1,0 +1,476 @@
+{
+  "record_id": "57f8ff74-dd6d-4131-aff6-f39c78dc7674",
+  "snapshot": {
+    "snapshot_id": "6be3ba10-1125-4f6f-a59b-c66d7a8b1636",
+    "schema_version": "1.0.0",
+    "collected_at": "2026-07-07T14:03:19.795143+00:00",
+    "collection_duration_seconds": 0.0031,
+    "pipeline": {
+      "events_normalized": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No normalization report available.",
+        "computed_at": "2026-07-07T14:03:19.795171+00:00"
+      },
+      "events_failed": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No normalization report available.",
+        "computed_at": "2026-07-07T14:03:19.796430+00:00"
+      },
+      "normalization_error_rate": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No normalization report available.",
+        "computed_at": "2026-07-07T14:03:19.796439+00:00"
+      },
+      "sources_processed": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No normalization report available.",
+        "computed_at": "2026-07-07T14:03:19.796445+00:00"
+      },
+      "normalization_duration_seconds": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No normalization report available.",
+        "computed_at": "2026-07-07T14:03:19.796449+00:00"
+      },
+      "event_processing_rate": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No normalization report available.",
+        "computed_at": "2026-07-07T14:03:19.796454+00:00"
+      },
+      "feature_records_produced": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature pipeline report available.",
+        "computed_at": "2026-07-07T14:03:19.796458+00:00"
+      },
+      "feature_extraction_errors": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature pipeline report available.",
+        "computed_at": "2026-07-07T14:03:19.796461+00:00"
+      },
+      "feature_generation_rate": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature pipeline report available.",
+        "computed_at": "2026-07-07T14:03:19.796465+00:00"
+      },
+      "feature_extraction_duration_seconds": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature pipeline report available.",
+        "computed_at": "2026-07-07T14:03:19.796469+00:00"
+      },
+      "pipeline_end_to_end_latency_seconds": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No timing data available for end-to-end latency.",
+        "computed_at": "2026-07-07T14:03:19.796479+00:00"
+      }
+    },
+    "baseline": {
+      "entity_count": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No baseline profile loaded.",
+        "computed_at": "2026-07-07T14:03:19.796708+00:00"
+      },
+      "entity_type_breakdown": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No baseline profile loaded.",
+        "computed_at": "2026-07-07T14:03:19.796712+00:00"
+      },
+      "baseline_coverage_ratio": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No baseline profile loaded.",
+        "computed_at": "2026-07-07T14:03:19.796715+00:00"
+      },
+      "total_events_in_baseline": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No baseline profile loaded.",
+        "computed_at": "2026-07-07T14:03:19.796718+00:00"
+      },
+      "mean_observations_per_entity": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No entity baselines in profile.",
+        "computed_at": "2026-07-07T14:03:19.796721+00:00"
+      },
+      "min_observations_per_entity": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No entity baselines in profile.",
+        "computed_at": "2026-07-07T14:03:19.796725+00:00"
+      },
+      "max_observations_per_entity": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No entity baselines in profile.",
+        "computed_at": "2026-07-07T14:03:19.796727+00:00"
+      },
+      "mean_baseline_window_days": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No baseline profile loaded.",
+        "computed_at": "2026-07-07T14:03:19.796730+00:00"
+      },
+      "baseline_age_hours": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No baseline profile loaded.",
+        "computed_at": "2026-07-07T14:03:19.796732+00:00"
+      },
+      "baseline_profile_id": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No baseline profile ID available.",
+        "computed_at": "2026-07-07T14:03:19.796735+00:00"
+      },
+      "entities_with_network_baseline": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No baseline profile loaded.",
+        "computed_at": "2026-07-07T14:03:19.796738+00:00"
+      },
+      "entities_with_process_baseline": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No baseline profile loaded.",
+        "computed_at": "2026-07-07T14:03:19.796743+00:00"
+      },
+      "entities_with_auth_baseline": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No baseline profile loaded.",
+        "computed_at": "2026-07-07T14:03:19.796748+00:00"
+      },
+      "entities_with_modbus_baseline": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No baseline profile loaded.",
+        "computed_at": "2026-07-07T14:03:19.796750+00:00"
+      }
+    },
+    "feature": {
+      "feature_schema_version": {
+        "value": "1.0.0",
+        "availability": "computed",
+        "unit": null,
+        "description": "Feature schema version used in the last extraction run.",
+        "computed_at": "2026-07-07T14:03:19.797229+00:00"
+      },
+      "feature_dimension": {
+        "value": 56,
+        "availability": "computed",
+        "unit": "count",
+        "description": "Number of features in each feature vector.",
+        "computed_at": "2026-07-07T14:03:19.797251+00:00"
+      },
+      "total_feature_records": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature records or report available.",
+        "computed_at": "2026-07-07T14:03:19.797273+00:00"
+      },
+      "unique_entities_extracted": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature data available.",
+        "computed_at": "2026-07-07T14:03:19.797278+00:00"
+      },
+      "baseline_available_fraction": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature records to compute baseline fraction.",
+        "computed_at": "2026-07-07T14:03:19.797282+00:00"
+      },
+      "cold_start_fraction": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature data for cold-start fraction.",
+        "computed_at": "2026-07-07T14:03:19.797286+00:00"
+      },
+      "mean_novelty_count": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature records to compute novelty statistics.",
+        "computed_at": "2026-07-07T14:03:19.797289+00:00"
+      },
+      "max_novelty_count": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature records to compute novelty statistics.",
+        "computed_at": "2026-07-07T14:03:19.797293+00:00"
+      },
+      "novelty_rate": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature records to compute novelty rate.",
+        "computed_at": "2026-07-07T14:03:19.797296+00:00"
+      },
+      "extraction_error_rate": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature records — cannot compute error rate.",
+        "computed_at": "2026-07-07T14:03:19.797300+00:00"
+      },
+      "extraction_warning_rate": {
+        "value": null,
+        "availability": "insufficient_data",
+        "unit": null,
+        "description": "No feature records — cannot compute warning rate.",
+        "computed_at": "2026-07-07T14:03:19.797303+00:00"
+      }
+    },
+    "detection": {
+      "mean_time_to_detect_seconds": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Behavioral Detection Core (Module 2.4+), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797336+00:00"
+      },
+      "detection_rate": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Behavioral Detection Core (Module 2.4+), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797340+00:00"
+      },
+      "false_positive_rate": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Behavioral Detection Core (Module 2.4+), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797343+00:00"
+      },
+      "true_positive_count": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Behavioral Detection Core (Module 2.4+), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797345+00:00"
+      },
+      "false_positive_count": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Behavioral Detection Core (Module 2.4+), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797348+00:00"
+      },
+      "alerts_generated": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Behavioral Detection Core (Module 2.4+), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797351+00:00"
+      },
+      "anomaly_score_mean": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Behavioral Detection Core (Module 2.4+), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797356+00:00"
+      },
+      "anomaly_score_p95": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Behavioral Detection Core (Module 2.4+), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797359+00:00"
+      }
+    },
+    "response": {
+      "mean_time_to_respond_seconds": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Response Orchestration (Module 3.x), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797379+00:00"
+      },
+      "automation_coverage": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Response Orchestration (Module 3.x), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797382+00:00"
+      },
+      "audit_coverage": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Response Orchestration (Module 3.x), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797386+00:00"
+      },
+      "actions_executed": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Response Orchestration (Module 3.x), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797389+00:00"
+      },
+      "actions_approved": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Response Orchestration (Module 3.x), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797392+00:00"
+      },
+      "actions_rejected": {
+        "value": null,
+        "availability": "unavailable",
+        "unit": null,
+        "description": "Requires Response Orchestration (Module 3.x), not yet implemented.",
+        "computed_at": "2026-07-07T14:03:19.797395+00:00"
+      }
+    },
+    "health": {
+      "normalization_schema_version": {
+        "value": "1.0",
+        "availability": "computed",
+        "unit": null,
+        "description": "CanonicalEvent normalization schema version.",
+        "computed_at": "2026-07-07T14:03:19.797731+00:00"
+      },
+      "baseline_schema_version": {
+        "value": "1.0.0",
+        "availability": "computed",
+        "unit": null,
+        "description": "BaselineProfile schema version.",
+        "computed_at": "2026-07-07T14:03:19.797735+00:00"
+      },
+      "feature_schema_version": {
+        "value": "1.0.0",
+        "availability": "computed",
+        "unit": null,
+        "description": "FeatureVector schema version.",
+        "computed_at": "2026-07-07T14:03:19.797738+00:00"
+      },
+      "metrics_schema_version": {
+        "value": "1.0.0",
+        "availability": "computed",
+        "unit": null,
+        "description": "MetricSnapshot schema version.",
+        "computed_at": "2026-07-07T14:03:19.797741+00:00"
+      },
+      "components": [
+        {
+          "name": "normalization_pipeline",
+          "status": "degraded",
+          "version": "1.0",
+          "detail": "No normalized events output file found.",
+          "checked_at": "2026-07-07T14:03:19.797570+00:00"
+        },
+        {
+          "name": "baseline_system",
+          "status": "degraded",
+          "version": "1.0.0",
+          "detail": "No baseline artifacts found. Run Module 2.1 to build a baseline.",
+          "checked_at": "2026-07-07T14:03:19.797629+00:00"
+        },
+        {
+          "name": "feature_engine",
+          "status": "degraded",
+          "version": "1.0.0",
+          "detail": "No feature output directory found. Run Module 2.2 pipeline.",
+          "checked_at": "2026-07-07T14:03:19.797668+00:00"
+        },
+        {
+          "name": "metrics_engine",
+          "status": "healthy",
+          "version": "1.0.0",
+          "detail": "Metrics collection engine operational.",
+          "checked_at": "2026-07-07T14:03:19.797673+00:00"
+        },
+        {
+          "name": "detection_core",
+          "status": "not_implemented",
+          "version": null,
+          "detail": "Planned for a future implementation phase.",
+          "checked_at": "2026-07-07T14:03:19.797678+00:00"
+        },
+        {
+          "name": "response_orchestrator",
+          "status": "not_implemented",
+          "version": null,
+          "detail": "Planned for a future implementation phase.",
+          "checked_at": "2026-07-07T14:03:19.797681+00:00"
+        },
+        {
+          "name": "llm_enrichment",
+          "status": "not_implemented",
+          "version": null,
+          "detail": "Planned for a future implementation phase.",
+          "checked_at": "2026-07-07T14:03:19.797684+00:00"
+        }
+      ],
+      "feature_flags_enabled": {
+        "value": [
+          "feature_ingestion_enabled",
+          "feature_normalization_enabled"
+        ],
+        "availability": "computed",
+        "unit": null,
+        "description": "Names of currently enabled feature flags.",
+        "computed_at": "2026-07-07T14:03:19.798192+00:00"
+      },
+      "app_environment": {
+        "value": "development",
+        "availability": "computed",
+        "unit": null,
+        "description": "Current deployment environment.",
+        "computed_at": "2026-07-07T14:03:19.798204+00:00"
+      },
+      "collection_timestamp": {
+        "value": "2026-07-07T14:03:19.797415+00:00",
+        "availability": "computed",
+        "unit": null,
+        "description": "UTC timestamp when this health snapshot was collected.",
+        "computed_at": "2026-07-07T14:03:19.798216+00:00"
+      }
+    },
+    "tags": {}
+  },
+  "written_at": "2026-07-07T14:03:19.798529+00:00"
+}
