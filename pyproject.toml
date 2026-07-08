@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 # ---------------------------------------------------------------------------
 # Project Metadata
@@ -62,8 +62,14 @@ dev = [
 ]
 
 # ---------------------------------------------------------------------------
-# Ruff — Linting + Formatting
+# Setuptools — Package Discovery
 # ---------------------------------------------------------------------------
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*"]
+exclude = ["tests*", "data*", "docker*", "models*", "reports*"]
+
+
 [tool.ruff]
 target-version = "py311"
 line-length = 100
@@ -160,6 +166,10 @@ filterwarnings = [
     "error",
     "ignore::DeprecationWarning:pydantic.*",
     "ignore::DeprecationWarning:pkg_resources.*",
+    # anyio/TestClient on Windows: ASGI memory streams GC'd during teardown
+    "ignore::ResourceWarning:anyio.*",
+    # anyio unclosed stream warning promoted via pytest unraisable hook
+    "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
 
 # ---------------------------------------------------------------------------

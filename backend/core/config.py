@@ -31,7 +31,7 @@ import functools
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import Field, HttpUrl, SecretStr, field_validator, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -47,8 +47,8 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
-        extra="ignore",   # silently ignore unknown vars (forward compat)
-        frozen=True,      # immutable after construction
+        extra="ignore",  # silently ignore unknown vars (forward compat)
+        frozen=True,  # immutable after construction
     )
 
     # -----------------------------------------------------------------------
@@ -193,12 +193,12 @@ class Settings(BaseSettings):
         default=0,
         ge=0,
         description="Maximum lines read per source per pipeline run. "
-                    "0 = unlimited. Use in tests for speed.",
+        "0 = unlimited. Use in tests for speed.",
     )
     norm_overwrite_output: bool = Field(
         default=False,
         description="If True, truncate the output JSONL before each run. "
-                    "False = append (accumulate across runs).",
+        "False = append (accumulate across runs).",
     )
 
     # -----------------------------------------------------------------------
@@ -234,13 +234,32 @@ class Settings(BaseSettings):
     @field_validator("cors_allowed_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
-        """Accept comma-separated string or list for CORS origins."""
+        """Accept JSON array string, comma-separated string, or list for CORS origins.
+
+        pydantic-settings 2.3.x JSON-decodes list[str] fields from .env before
+        this validator runs, so the value arrives as a list[str] in normal operation.
+        Comma-string and JSON-string forms are supported for direct Python construction.
+        """
+        if isinstance(v, list):
+            return v
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+            stripped = v.strip()
+            # Handle JSON array string: '["a","b"]'
+            if stripped.startswith("["):
+                import json as _json
+
+                try:
+                    parsed = _json.loads(stripped)
+                    if isinstance(parsed, list):
+                        return [str(o).strip() for o in parsed if str(o).strip()]
+                except _json.JSONDecodeError:
+                    pass
+            # Handle comma-separated string: "a,b,c"
+            return [origin.strip() for origin in stripped.split(",") if origin.strip()]
+        return list(v)
 
     @model_validator(mode="after")
-    def validate_production_secrets(self) -> "Settings":
+    def validate_production_secrets(self) -> Settings:
         """Enforce strong secrets in production deployments."""
         if self.app_env == "production":
             weak_key = "change-me-in-production"
@@ -253,7 +272,7 @@ class Settings(BaseSettings):
         return self
 
     @model_validator(mode="after")
-    def ensure_directories_exist(self) -> "Settings":
+    def ensure_directories_exist(self) -> Settings:
         """Create required directories if they do not exist."""
         for directory in (
             self.data_dir,

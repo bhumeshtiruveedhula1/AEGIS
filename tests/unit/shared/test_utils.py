@@ -7,20 +7,17 @@ Unit tests for all utility modules in backend.shared.utils.
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 
 from backend.shared.utils.datetime_utils import (
     format_iso8601,
-    get_hour_boundaries,
-    is_within_baseline_window,
     is_within_window,
     parse_iso8601,
     seconds_between,
     to_utc,
-    truncate_to_day,
     truncate_to_hour,
     utcnow,
 )
@@ -31,7 +28,6 @@ from backend.shared.utils.id_utils import (
     validate_id,
 )
 from backend.shared.utils.json_utils import (
-    pretty_dumps,
     read_jsonl,
     safe_dumps,
     safe_loads,
@@ -40,11 +36,9 @@ from backend.shared.utils.json_utils import (
 )
 from backend.shared.utils.validation_utils import (
     validate_anomaly_score,
-    validate_confidence_score,
     validate_email,
     validate_hostname,
     validate_mitre_technique_id,
-    validate_mitre_tactic_id,
     validate_nonempty_string,
 )
 
@@ -75,7 +69,7 @@ class TestToUTC:
         ist = timezone(timedelta(hours=5, minutes=30))
         aware = datetime(2024, 1, 15, 16, 0, 0, tzinfo=ist)
         result = to_utc(aware)
-        assert result.hour == 10   # 16:00 IST = 10:30 UTC
+        assert result.hour == 10  # 16:00 IST = 10:30 UTC
         assert result.minute == 30
 
     def test_raises_for_non_datetime(self) -> None:
@@ -224,8 +218,14 @@ class TestSafeDumps:
         assert '"red"' in result
 
     def test_serialises_path(self) -> None:
-        result = safe_dumps({"path": Path("/tmp/test")})
-        assert "/tmp/test" in result
+        import json as _json
+
+        p = Path("/tmp/test")
+        result = safe_dumps({"path": p})
+        # Decode the JSON to get the actual stored value and compare
+        # (raw JSON escapes backslashes on Windows: \tmp\test -> \\tmp\\test)
+        decoded = _json.loads(result)
+        assert decoded["path"] == str(p)
 
 
 class TestSafeLoads:
