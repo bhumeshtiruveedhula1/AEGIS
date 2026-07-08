@@ -12,7 +12,11 @@ from datetime import UTC, datetime
 import pytest
 
 from backend.baseline.models import EntityKey
-from backend.features.models import ALL_FEATURE_NAMES, FEATURE_DIMENSION, FeatureRecord, FeatureVector
+from backend.features.models import (
+    ALL_FEATURE_NAMES,
+    FeatureRecord,
+    FeatureVector,
+)
 
 
 def make_feature_record(
@@ -29,6 +33,7 @@ def make_feature_record(
     anomaly_hint = 1.0 → all binary features active (maximally novel)
     """
     import uuid
+
     eid = event_id or str(uuid.uuid4())
     entity_key = EntityKey(entity_type=entity_type, entity_id=entity_id)
 
@@ -73,6 +78,7 @@ def make_anomalous_record(entity_type: str = "user_host") -> FeatureRecord:
 # ---------------------------------------------------------------------------
 # Pytest fixtures exported from this conftest
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def normal_records() -> list[FeatureRecord]:

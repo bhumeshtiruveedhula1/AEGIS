@@ -16,14 +16,13 @@ from backend.detection.models import (
     DetectionAlert,
     DetectionResult,
     ModelMetadata,
-    TrainingResult,
 )
 from backend.features.models import ALL_FEATURE_NAMES, FEATURE_DIMENSION
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def sample_entity_key() -> EntityKey:
@@ -50,7 +49,9 @@ def valid_model_metadata() -> ModelMetadata:
 
 
 @pytest.fixture()
-def valid_alert(sample_entity_key: EntityKey, valid_model_metadata: ModelMetadata) -> DetectionAlert:
+def valid_alert(
+    sample_entity_key: EntityKey, valid_model_metadata: ModelMetadata
+) -> DetectionAlert:
     return DetectionAlert(
         model_id=valid_model_metadata.model_id,
         entity_key=sample_entity_key,
@@ -74,6 +75,7 @@ def valid_alert(sample_entity_key: EntityKey, valid_model_metadata: ModelMetadat
 # ModelMetadata tests
 # ---------------------------------------------------------------------------
 
+
 class TestModelMetadata:
     def test_construction_valid(self, valid_model_metadata: ModelMetadata) -> None:
         assert valid_model_metadata.model_id == "iforest-test-001"
@@ -87,7 +89,7 @@ class TestModelMetadata:
                 model_id="bad-meta",
                 feature_schema_version="1.0.0",
                 feature_names=["feat_a", "feat_b"],  # 2 names
-                feature_dimension=99,                 # but says 99
+                feature_dimension=99,  # but says 99
                 n_estimators=100,
                 contamination=0.05,
                 random_state=42,
@@ -109,7 +111,7 @@ class TestModelMetadata:
                 feature_names=list(ALL_FEATURE_NAMES),
                 feature_dimension=FEATURE_DIMENSION,
                 n_estimators=100,
-                contamination=0.9,   # exceeds max 0.5
+                contamination=0.9,  # exceeds max 0.5
                 random_state=42,
                 entity_dimension="user_host",
                 model_file="x.pkl",
@@ -143,6 +145,7 @@ class TestModelMetadata:
 # DetectionAlert tests
 # ---------------------------------------------------------------------------
 
+
 class TestDetectionAlert:
     def test_construction(self, valid_alert: DetectionAlert) -> None:
         assert valid_alert.anomaly_score == pytest.approx(0.82, abs=1e-5)
@@ -155,15 +158,23 @@ class TestDetectionAlert:
     def test_nan_score_replaced_with_zero(self) -> None:
         """The field_validator replaces NaN with 0.0 via the _validate_score method."""
         import math
+
         from backend.detection.scorer import _sigmoid_score
+
         # Test the scorer's NaN handling (Pydantic ge/le prevents raw NaN in the model)
         assert _sigmoid_score(float("nan")) == 0.0
         assert math.isfinite(_sigmoid_score(float("nan")))
 
     def test_to_summary_keys(self, valid_alert: DetectionAlert) -> None:
         summary = valid_alert.to_summary()
-        for key in ("alert_id", "model_id", "entity_type", "anomaly_score",
-                    "threshold_used", "novelty_count"):
+        for key in (
+            "alert_id",
+            "model_id",
+            "entity_type",
+            "anomaly_score",
+            "threshold_used",
+            "novelty_count",
+        ):
             assert key in summary
 
     def test_json_round_trip(self, valid_alert: DetectionAlert) -> None:
@@ -177,6 +188,7 @@ class TestDetectionAlert:
 # DetectionResult tests
 # ---------------------------------------------------------------------------
 
+
 class TestDetectionResult:
     def test_alert_rate_empty(self) -> None:
         result = DetectionResult(
@@ -186,9 +198,7 @@ class TestDetectionResult:
         )
         assert result.alert_rate == 0.0
 
-    def test_alert_rate_calculation(
-        self, valid_alert: DetectionAlert
-    ) -> None:
+    def test_alert_rate_calculation(self, valid_alert: DetectionAlert) -> None:
         result = DetectionResult(
             model_id="m1",
             score_threshold=0.5,

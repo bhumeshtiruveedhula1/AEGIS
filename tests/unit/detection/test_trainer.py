@@ -5,15 +5,12 @@ tests/unit/detection/test_trainer.py — IsolationForestTrainer Tests
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from backend.detection.models import ModelMetadata, TrainingResult
 from backend.detection.trainer import IsolationForestTrainer, _DetectionPipeline
 from backend.features.models import FEATURE_DIMENSION
-
-from tests.unit.detection.conftest import make_normal_records, make_anomalous_record
+from tests.unit.detection.conftest import make_anomalous_record, make_normal_records
 
 
 class TestIsolationForestTrainer:
@@ -50,9 +47,7 @@ class TestIsolationForestTrainer:
         assert result.model_id == "custom-id-001"
 
     def test_entity_dim_filter(self) -> None:
-        trainer = IsolationForestTrainer(
-            n_estimators=10, random_state=42, entity_dim="user_host"
-        )
+        trainer = IsolationForestTrainer(n_estimators=10, random_state=42, entity_dim="user_host")
         uh = make_normal_records(30, entity_type="user_host")
         user = make_normal_records(20, entity_type="user")
         _, _, result = trainer.train(uh + user)
@@ -69,12 +64,8 @@ class TestIsolationForestTrainer:
         records = make_normal_records(60)
         anomaly = make_anomalous_record()
 
-        trainer_a = IsolationForestTrainer(
-            n_estimators=20, contamination=0.05, random_state=99
-        )
-        trainer_b = IsolationForestTrainer(
-            n_estimators=20, contamination=0.05, random_state=99
-        )
+        trainer_a = IsolationForestTrainer(n_estimators=20, contamination=0.05, random_state=99)
+        trainer_b = IsolationForestTrainer(n_estimators=20, contamination=0.05, random_state=99)
 
         pipeline_a, _, _ = trainer_a.train(records)
         pipeline_b, _, _ = trainer_b.train(records)
@@ -121,15 +112,10 @@ class TestIsolationForestTrainer:
     def test_entity_count_in_result(self) -> None:
         trainer = IsolationForestTrainer(n_estimators=10, random_state=42)
         # 10 unique entity IDs
-        records = [
-            make_normal_records(5, entity_type="user_host")[i % 5]
-            for i in range(10)
-        ]
+        records = [make_normal_records(5, entity_type="user_host")[i % 5] for i in range(10)]
         # override entity_ids manually
         from tests.unit.detection.conftest import make_feature_record
-        records_unique = [
-            make_feature_record(entity_id=f"u{i}::h{i}")
-            for i in range(10)
-        ]
+
+        records_unique = [make_feature_record(entity_id=f"u{i}::h{i}") for i in range(10)]
         _, _, result = trainer.train(records_unique)
         assert result.entity_count == 10

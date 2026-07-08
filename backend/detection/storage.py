@@ -34,8 +34,6 @@ ensures readers never observe a partial write.
 
 from __future__ import annotations
 
-import json
-import os
 import pickle
 from pathlib import Path
 from typing import Any
@@ -45,7 +43,7 @@ import structlog
 from backend.core.config import get_settings
 from backend.detection.exceptions import ModelNotTrainedError, SchemaCompatibilityError
 from backend.detection.models import ModelMetadata
-from backend.features.models import ALL_FEATURE_NAMES, FEATURE_SCHEMA_VERSION
+from backend.features.models import ALL_FEATURE_NAMES
 
 logger = structlog.get_logger(__name__)
 
@@ -225,7 +223,7 @@ class ModelStore:
             try:
                 meta = self._read_metadata(meta_file)
                 result.append(meta)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning(
                     "model_metadata_unreadable",
                     file=str(meta_file),
@@ -257,7 +255,7 @@ class ModelStore:
             )
 
         with model_path.open("rb") as fh:
-            pipeline = pickle.load(fh)  # noqa: S301
+            pipeline = pickle.load(fh)
 
         logger.info(
             "model_loaded",
@@ -296,7 +294,11 @@ class ModelStore:
         if trained_names != live_names:
             # Find first divergence for a helpful error message
             first_diff = next(
-                (i for i, (t, l) in enumerate(zip(trained_names, live_names)) if t != l),
+                (
+                    i
+                    for i, (t, l) in enumerate(zip(trained_names, live_names, strict=False))
+                    if t != l
+                ),
                 len(trained_names),
             )
             raise SchemaCompatibilityError(

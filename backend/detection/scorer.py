@@ -42,14 +42,13 @@ Multiple threads may call score_single/batch/stream concurrently.
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable, Iterator
 from datetime import UTC, datetime
-from typing import Iterable, Iterator
 
 import numpy as np
 import structlog
 
 from backend.core.config import get_settings
-from backend.detection.exceptions import ModelNotTrainedError, SchemaCompatibilityError
 from backend.detection.models import (
     DetectionAlert,
     DetectionResult,
@@ -95,7 +94,7 @@ class AnomalyScorer:
 
     def __init__(
         self,
-        pipeline: object,      # _DetectionPipeline — avoid circular import
+        pipeline: object,  # _DetectionPipeline — avoid circular import
         metadata: ModelMetadata,
         *,
         threshold: float | None = None,
@@ -210,10 +209,12 @@ class AnomalyScorer:
                 entity_dim=target_dim,
                 total_input=len(records),
             )
-            completed = result.model_copy(update={
-                "completed_at": datetime.now(UTC),
-                "records_scored": 0,
-            })
+            completed = result.model_copy(
+                update={
+                    "completed_at": datetime.now(UTC),
+                    "records_scored": 0,
+                }
+            )
             return completed
 
         # Vectorised transform
@@ -221,11 +222,13 @@ class AnomalyScorer:
             X = self._pipeline.preprocessor.transform(to_score)
         except Exception as exc:
             logger.error("batch_transform_failed", error=str(exc))
-            completed = result.model_copy(update={
-                "completed_at": datetime.now(UTC),
-                "records_scored": len(to_score),
-                "errors": len(to_score),
-            })
+            completed = result.model_copy(
+                update={
+                    "completed_at": datetime.now(UTC),
+                    "records_scored": len(to_score),
+                    "errors": len(to_score),
+                }
+            )
             return completed
 
         # Vectorised decision_function — single sklearn call for efficiency
@@ -241,7 +244,7 @@ class AnomalyScorer:
                 if anomaly_score >= self._threshold:
                     alert = self._build_alert(record, raw_score, anomaly_score)
                     alerts.append(alert)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 errors += 1
                 logger.warning(
                     "record_score_error",
@@ -250,13 +253,15 @@ class AnomalyScorer:
                 )
 
         completed_at = datetime.now(UTC)
-        completed = result.model_copy(update={
-            "completed_at": completed_at,
-            "records_scored": len(to_score),
-            "alerts_generated": len(alerts),
-            "alerts": alerts,
-            "errors": errors,
-        })
+        completed = result.model_copy(
+            update={
+                "completed_at": completed_at,
+                "records_scored": len(to_score),
+                "alerts_generated": len(alerts),
+                "alerts": alerts,
+                "errors": errors,
+            }
+        )
 
         logger.info(
             "batch_scoring_complete",
@@ -311,7 +316,7 @@ class AnomalyScorer:
                 if alert is not None:
                     emitted += 1
                     yield alert
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning(
                     "stream_record_error",
                     record_id=record.record_id,
@@ -356,4 +361,5 @@ class AnomalyScorer:
 def _make_run_id() -> str:
     """Generate a short scoring run identifier."""
     from backend.shared.utils.id_utils import generate_id
+
     return f"score-{generate_id()}"

@@ -9,16 +9,15 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from backend.detection.exceptions import ModelNotTrainedError, SchemaCompatibilityError
 from backend.detection.models import ModelMetadata
-from backend.detection.storage import ModelStore
-from backend.detection.trainer import IsolationForestTrainer, _DetectionPipeline
 from backend.detection.preprocessor import FeaturePreprocessor
+from backend.detection.storage import ModelStore
+from backend.detection.trainer import _DetectionPipeline
 from backend.features.models import ALL_FEATURE_NAMES, FEATURE_DIMENSION
 from tests.unit.detection.conftest import make_normal_records
 
@@ -26,6 +25,7 @@ from tests.unit.detection.conftest import make_normal_records
 def make_real_pipeline() -> _DetectionPipeline:
     """Build a minimal real _DetectionPipeline that is picklable."""
     from sklearn.ensemble import IsolationForest
+
     records = make_normal_records(30)
     pp = FeaturePreprocessor()
     pp.fit_transform(records, entity_dim="user_host")
@@ -38,6 +38,7 @@ def make_real_pipeline() -> _DetectionPipeline:
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def tmp_store(tmp_path: Path) -> ModelStore:
@@ -73,6 +74,7 @@ def mock_pipeline() -> _DetectionPipeline:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestModelStore:
     def test_store_dir_created_on_init(self, tmp_path: Path) -> None:
@@ -130,9 +132,7 @@ class TestModelStore:
         mock_pipeline: MagicMock,
     ) -> None:
         tmp_store.save(mock_pipeline, sample_metadata)
-        pipeline, meta = tmp_store.load_by_id(
-            sample_metadata.model_id, validate_schema=False
-        )
+        pipeline, meta = tmp_store.load_by_id(sample_metadata.model_id, validate_schema=False)
         assert meta.model_id == sample_metadata.model_id
 
     def test_has_trained_model_false_when_empty(self, tmp_store: ModelStore) -> None:

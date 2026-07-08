@@ -51,10 +51,8 @@ Usage
 
 from __future__ import annotations
 
-import json
-from datetime import UTC, datetime
+from collections.abc import Iterable, Iterator
 from pathlib import Path
-from typing import Iterable, Iterator
 
 import structlog
 
@@ -189,10 +187,12 @@ class DetectionService:
         model_path, meta_path = self._store.save(pipeline, metadata)
 
         # Update result with actual paths
-        result = result.model_copy(update={
-            "model_path": str(model_path),
-            "metadata_path": str(meta_path),
-        })
+        result = result.model_copy(
+            update={
+                "model_path": str(model_path),
+                "metadata_path": str(meta_path),
+            }
+        )
 
         # Reload into memory immediately
         self._scorer = AnomalyScorer(pipeline, metadata, threshold=self._threshold)
@@ -233,7 +233,9 @@ class DetectionService:
         -------
         TrainingResult — same contract as train_from_features().
         """
-        existing = existing_records if existing_records is not None else self._load_all_feature_records()
+        existing = (
+            existing_records if existing_records is not None else self._load_all_feature_records()
+        )
 
         logger.info(
             "incremental_retrain_initiated",
@@ -242,15 +244,15 @@ class DetectionService:
         )
 
         trainer = IsolationForestTrainer(entity_dim=self._entity_dim)
-        pipeline, metadata, result = trainer.retrain(
-            existing, new_records, notes=notes
-        )
+        pipeline, metadata, result = trainer.retrain(existing, new_records, notes=notes)
 
         model_path, meta_path = self._store.save(pipeline, metadata)
-        result = result.model_copy(update={
-            "model_path": str(model_path),
-            "metadata_path": str(meta_path),
-        })
+        result = result.model_copy(
+            update={
+                "model_path": str(model_path),
+                "metadata_path": str(meta_path),
+            }
+        )
 
         self._scorer = AnomalyScorer(pipeline, metadata, threshold=self._threshold)
         self._current_metadata = metadata
@@ -394,15 +396,17 @@ class DetectionService:
             "threshold": self._threshold,
         }
         if self._current_metadata:
-            status.update({
-                "model_id": self._current_metadata.model_id,
-                "trained_at": self._current_metadata.trained_at.isoformat(),
-                "sample_count": self._current_metadata.sample_count,
-                "entity_count": self._current_metadata.entity_count,
-                "feature_dimension": self._current_metadata.feature_dimension,
-                "contamination": self._current_metadata.contamination,
-                "n_estimators": self._current_metadata.n_estimators,
-            })
+            status.update(
+                {
+                    "model_id": self._current_metadata.model_id,
+                    "trained_at": self._current_metadata.trained_at.isoformat(),
+                    "sample_count": self._current_metadata.sample_count,
+                    "entity_count": self._current_metadata.entity_count,
+                    "feature_dimension": self._current_metadata.feature_dimension,
+                    "contamination": self._current_metadata.contamination,
+                    "n_estimators": self._current_metadata.n_estimators,
+                }
+            )
         return status
 
     # ── Internal helpers ──────────────────────────────────────────────────────
@@ -480,7 +484,7 @@ class DetectionService:
                             record = FeatureRecord.model_validate_json(line)
                             records.append(record)
                             file_records += 1
-                        except Exception as exc:  # noqa: BLE001
+                        except Exception as exc:
                             file_errors += 1
                             logger.debug(
                                 "feature_record_parse_error",

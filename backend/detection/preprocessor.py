@@ -33,17 +33,12 @@ immutable post-fit). Safe for concurrent reads from multiple threads.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 import structlog
 from sklearn.preprocessing import StandardScaler
 
 from backend.detection.exceptions import SchemaCompatibilityError
 from backend.features.models import ALL_FEATURE_NAMES, FEATURE_DIMENSION, FeatureRecord
-
-if TYPE_CHECKING:
-    pass
 
 logger = structlog.get_logger(__name__)
 
@@ -213,7 +208,11 @@ class FeaturePreprocessor:
         live = list(ALL_FEATURE_NAMES)
         if live != self._feature_names:
             first_diff = next(
-                (i for i, (a, b) in enumerate(zip(self._feature_names, live)) if a != b),
+                (
+                    i
+                    for i, (a, b) in enumerate(zip(self._feature_names, live, strict=False))
+                    if a != b
+                ),
                 len(live),
             )
             raise SchemaCompatibilityError(

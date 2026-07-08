@@ -28,14 +28,11 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import Field, field_validator, model_validator
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from backend.baseline.models import EntityKey
-from backend.features.models import ALL_FEATURE_NAMES, FEATURE_DIMENSION
 from backend.shared.models import CyberShieldBaseModel
 from backend.shared.utils.id_utils import generate_id
-
 
 # ---------------------------------------------------------------------------
 # Schema version sentinel — bump on breaking change
@@ -47,6 +44,7 @@ DETECTION_SCHEMA_VERSION = "1.0.0"
 # ---------------------------------------------------------------------------
 # ModelMetadata — persisted alongside each trained model artifact
 # ---------------------------------------------------------------------------
+
 
 class ModelMetadata(CyberShieldBaseModel):
     model_config = ConfigDict(
@@ -143,7 +141,7 @@ class ModelMetadata(CyberShieldBaseModel):
     )
 
     @model_validator(mode="after")
-    def _validate_feature_dimension(self) -> "ModelMetadata":
+    def _validate_feature_dimension(self) -> ModelMetadata:
         if len(self.feature_names) != self.feature_dimension:
             msg = (
                 f"feature_dimension={self.feature_dimension} does not match "
@@ -156,6 +154,7 @@ class ModelMetadata(CyberShieldBaseModel):
 # ---------------------------------------------------------------------------
 # TrainingResult — returned by IsolationForestTrainer.train()
 # ---------------------------------------------------------------------------
+
 
 class TrainingResult(CyberShieldBaseModel):
     model_config = ConfigDict(
@@ -199,6 +198,7 @@ class TrainingResult(CyberShieldBaseModel):
 # ---------------------------------------------------------------------------
 # DetectionAlert — one anomalous event
 # ---------------------------------------------------------------------------
+
 
 class DetectionAlert(CyberShieldBaseModel):
     model_config = ConfigDict(
@@ -304,6 +304,7 @@ class DetectionAlert(CyberShieldBaseModel):
     @classmethod
     def _validate_score(cls, v: float) -> float:
         import math
+
         if not math.isfinite(v):
             return 0.0
         return round(float(v), 6)
@@ -333,6 +334,7 @@ class DetectionAlert(CyberShieldBaseModel):
 # ---------------------------------------------------------------------------
 # DetectionResult — aggregate result from one scoring pass
 # ---------------------------------------------------------------------------
+
 
 class DetectionResult(CyberShieldBaseModel):
     model_config = ConfigDict(

@@ -37,17 +37,14 @@ concurrently on independent inputs without conflict.
 from __future__ import annotations
 
 import time
-from pathlib import Path
 from typing import Any
 
-import numpy as np
 import structlog
 from sklearn.ensemble import IsolationForest
 from sklearn.pipeline import Pipeline
 
 from backend.core.config import get_settings
 from backend.detection.models import (
-    DETECTION_SCHEMA_VERSION,
     ModelMetadata,
     TrainingResult,
 )
@@ -94,9 +91,15 @@ class IsolationForestTrainer:
         entity_dim: str = "user_host",
     ) -> None:
         settings = get_settings()
-        self._contamination = contamination if contamination is not None else settings.isolation_forest_contamination
-        self._n_estimators = n_estimators if n_estimators is not None else settings.isolation_forest_n_estimators
-        self._random_state = random_state if random_state is not None else settings.isolation_forest_random_state
+        self._contamination = (
+            contamination if contamination is not None else settings.isolation_forest_contamination
+        )
+        self._n_estimators = (
+            n_estimators if n_estimators is not None else settings.isolation_forest_n_estimators
+        )
+        self._random_state = (
+            random_state if random_state is not None else settings.isolation_forest_random_state
+        )
         self._entity_dim = entity_dim
 
         logger.debug(
@@ -167,7 +170,7 @@ class IsolationForestTrainer:
             n_estimators=self._n_estimators,
             contamination=self._contamination,
             random_state=self._random_state,
-            n_jobs=-1,   # use all available CPUs during training
+            n_jobs=-1,  # use all available CPUs during training
         )
         isolation_forest.fit(X_scaled)
 
@@ -212,7 +215,7 @@ class IsolationForestTrainer:
             n_estimators=self._n_estimators,
             random_state=self._random_state,
             training_duration_seconds=round(duration, 4),
-            model_path="",     # filled by DetectionService after save
+            model_path="",  # filled by DetectionService after save
             metadata_path="",  # filled by DetectionService after save
         )
 
@@ -265,6 +268,7 @@ class IsolationForestTrainer:
 # ---------------------------------------------------------------------------
 # _DetectionPipeline — lightweight container for scaler + IF
 # ---------------------------------------------------------------------------
+
 
 class _DetectionPipeline:
     """

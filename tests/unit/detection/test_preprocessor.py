@@ -5,17 +5,15 @@ tests/unit/detection/test_preprocessor.py — FeaturePreprocessor Tests
 
 from __future__ import annotations
 
-import pytest
 import numpy as np
+import pytest
 
-from backend.detection.exceptions import SchemaCompatibilityError
 from backend.detection.preprocessor import FeaturePreprocessor
 from backend.features.models import FEATURE_DIMENSION
-
 from tests.unit.detection.conftest import (
-    make_normal_records,
-    make_feature_record,
     make_anomalous_record,
+    make_feature_record,
+    make_normal_records,
 )
 
 
