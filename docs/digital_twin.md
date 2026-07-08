@@ -132,10 +132,10 @@ Every event produced by any container conforms to the `BaseEvent` schema:
 - Reads: Registers 10–20 (sensor data: temperature, pressure, flow)
 - Writes: Registers 30–40 (setpoints: HVAC, oxygen valve, pump control)
 
-**Attack detection signals (for future modules):**
-- Access to registers 0–9 or 41–100 → discovery/reconnaissance
-- Write frequency >10x normal → Stuxnet-like sabotage
-- Source IP not `192.168.1.100` → unauthorised connection
+**Attack detection signals (consumed by downstream modules):**
+- Access to registers 0–9 or 41–100 → discovery/reconnaissance (T0840)
+- Write frequency >10x normal → Stuxnet-like sabotage (T0836)
+- Source IP not `192.168.1.100` → unauthorised connection (T0861)
 
 ---
 
@@ -173,7 +173,7 @@ ls -la data/digital_twin/                   # log file sizes
 
 ## Service Discovery API
 
-Future modules discover telemetry sources via the `DigitalTwinRegistry`:
+Downstream modules discover telemetry sources via the `DigitalTwinRegistry`:
 
 ```python
 from backend.digital_twin.registry import get_registry
@@ -238,17 +238,17 @@ curl http://localhost:9003/health  # ot-node
 
 ---
 
-## Integration Points for Future Modules
+## Integration Points — Downstream Modules
 
 | Module | What it uses from Module 1.2 |
 |--------|------------------------------|
 | **1.3 Normalization** | `registry.list_telemetry_sources()` → log paths and event types |
-| **1.4 Baseline** | `registry.get_all_log_paths()` → reads all JSONL logs for baseline stats |
-| **2.1 Detection** | `ContainerRole` → maps anomalies to specific containers |
-| **2.3 MITRE Mapping** | `TelemetryEventType` → maps event types to ATT&CK techniques |
-| **3.2 Response** | `registry.get_endpoint()` → target IP for isolation actions |
-| **3.3 Attack Sim** | `attacker` container → inject attack scripts |
-| **4 Dashboard** | `DigitalTwinHealth.to_summary()` → DT status widget |
+| **2.1 Baseline** | `registry.get_all_log_paths()` → reads all JSONL logs for baseline stats |
+| **2.4 Detection** | `ContainerRole` → maps `DetectionAlert` to specific containers |
+| **3.3 MITRE Mapper** | `TelemetryEventType` → maps event types to ATT&CK techniques |
+| **3.X Synthetic Attack** | `attacker` container config → target host/IP selection |
+| **4.1 Attack Context** | `DigitalTwinRegistry.get_topology()` → host/subnet context for evidence |
+| **5+ Dashboard** | `DigitalTwinHealth.to_summary()` → DT status widget (Phase 5) |
 
 ---
 

@@ -65,8 +65,8 @@ persists, and exposes engineering metrics across all platform modules.
 | `pipeline` | `PipelineMetrics` | ✅ Yes | Module 1.3 + Module 2.2 reports |
 | `baseline` | `BaselineMetrics` | ✅ Yes | Module 2.1 `BaselineProfile` |
 | `feature` | `FeatureMetrics` | ✅ Yes | Module 2.2 `FeaturePipelineReport` |
-| `detection` | `DetectionMetrics` | ⏳ Module 2.4+ | Isolation Forest (future) |
-| `response` | `ResponseMetrics` | ⏳ Module 3.x | Response Orchestrator (future) |
+| `detection` | `DetectionMetrics` | ✅ Module 2.4 | Isolation Forest — `DetectionAlert` |
+| `response` | `ResponseMetrics` | ⏳ Phase 5 | Response Orchestrator (not yet implemented) |
 | `platform_health` | `PlatformHealthMetrics` | ✅ Yes | Runtime state + file system |
 
 ---
@@ -88,7 +88,7 @@ class MetricValue(CyberShieldBaseModel, Generic[T]):
 
 **Availability contract**:
 - `COMPUTED` — real value, safe to consume
-- `UNAVAILABLE` — producing module not yet implemented (future phases)
+- `UNAVAILABLE` — producing module not yet implemented (Phase 5 modules)
 - `INSUFFICIENT_DATA` — module active, but no data for this run
 
 Constructors:
@@ -248,7 +248,7 @@ count = reader.snapshot_count()
 | Aggregate over entity list | Baseline statistics (mean/min/max from `EntityBaseline`) |
 | Probe-based | Platform health (lightweight file-system + reader state checks) |
 | Timestamp arithmetic | Baseline staleness (age_hours), latency sums |
-| Honest UNAVAILABLE | Detection/Response (future modules) |
+| Honest UNAVAILABLE | Response metrics (Phase 5 — not yet implemented) |
 
 All computation is deterministic — same inputs always produce identical outputs.
 
@@ -272,12 +272,12 @@ in the feature_records list. These are O(N) in the number of records.
 | Module 2.2 | `FeaturePipelineReport` | `feature_report` |
 | Module 2.2 | `list[FeatureRecord]` | `feature_records` |
 
-### Future module integration (no architecture changes required)
+### Phase 5 module integration (no architecture changes required)
 
 | Module | New kwargs to add |
 |--------|------------------|
-| Module 2.4 (Detection) | `detection_results`, `label_data`, `alert_records` |
-| Module 3.x (Response) | `response_actions`, `approval_records` |
+| Module 5.1 (LLM Agent) | `llm_results`, `reasoning_records` |
+| Module 5.2 (Response) | `response_actions`, `approval_records` |
 
 ---
 
