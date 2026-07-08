@@ -1,60 +1,72 @@
 """
-backend.detection — Isolation Forest Anomaly Detection Module
-=============================================================
-[Module 2.1 — Week 2, Phase 2A]
+backend.detection — Behavioral Detection Core
+=============================================
+Module 2.4 — Operation AEGIS / CyberShield
 
-RESPONSIBILITY
---------------
-Train an Isolation Forest on 7 days of normalised baseline logs,
-then score live events against the trained model to produce anomaly
-scores and alert triggers.
+Public API surface for the behavioral anomaly detection subsystem.
 
-DATA FLOW
----------
-BaselineStats + normalised baseline LogEvents
-    → IsolationForestAnomalyDetector.train()
-    → models/isolation_forest.pkl (persisted model)
+The Isolation Forest model is trained exclusively on normal behavioral
+feature vectors.  It never learns attack signatures.
 
-Live LogEvent
-    → FeatureVectorizer.transform()
-    → IsolationForestAnomalyDetector.score()
-    → AnomalyScore ∈ [-1.0, 1.0]
-    → if score > ANOMALY_SCORE_THRESHOLD → Alert generated
+Primary Entry Point
+-------------------
+    from backend.detection.service import DetectionService
 
-FUTURE CONTENTS
----------------
-- models/           AnomalyResult, AlertRecord, ModelMetadata
-- detector.py       IsolationForestAnomalyDetector
-- trainer.py        ModelTrainer — batch training workflow
-- scorer.py         EventScorer — real-time scoring pipeline
-- router.py         GET /api/v1/anomalies
-- health.py         Model loaded? Baseline available?
+    service = DetectionService()
+    result = service.train_from_features()
+    alert = service.score_event(feature_record)
 
-MODEL CONFIGURATION (from Settings)
-------------------------------------
-- contamination       : 0.01 (1% expected anomalies in normal data)
-- n_estimators        : 100
-- random_state        : 42 (reproducible)
-- alert_threshold     : 0.5 (anomaly_score > 0.5 → alert)
+Data Models
+-----------
+    from backend.detection.models import (
+        DetectionAlert,
+        DetectionResult,
+        ModelMetadata,
+        TrainingResult,
+    )
 
-INTEGRATION CONTRACT
---------------------
-Input:  feature_vector numpy.ndarray (from Features module)
-Output: AnomalyResult {
-    event_id:         str
-    anomaly_score:    float ∈ [-1.0, 1.0]
-    is_anomalous:     bool
-    detection_time:   datetime
-}
+Exceptions
+----------
+    from backend.detection.exceptions import (
+        DetectionError,
+        ModelNotTrainedError,
+        SchemaCompatibilityError,
+    )
 
-DEPENDENCIES
-------------
-- scikit-learn              IsolationForest
-- backend.features          FeatureVectorizer, HourlyFeatureVector
-- backend.core.config       Settings (contamination, n_estimators, seed)
-- backend.core.exceptions   ModelNotTrainedError, BaselineNotFoundError
-
-FEATURE FLAG
-------------
-settings.feature_detection_enabled = True to activate
+Architecture Layers
+-------------------
+DetectionService       ← orchestration (use this in application code)
+  IsolationForestTrainer ← training only
+  AnomalyScorer          ← inference only
+  ModelStore             ← persistence only
+  FeaturePreprocessor    ← data preparation only
 """
+
+from backend.detection.exceptions import (
+    DetectionError,
+    ModelNotTrainedError,
+    SchemaCompatibilityError,
+)
+from backend.detection.models import (
+    DETECTION_SCHEMA_VERSION,
+    DetectionAlert,
+    DetectionResult,
+    ModelMetadata,
+    TrainingResult,
+)
+from backend.detection.service import DetectionService
+
+__all__ = [
+    # Service (primary entry point)
+    "DetectionService",
+    # Models
+    "DetectionAlert",
+    "DetectionResult",
+    "ModelMetadata",
+    "TrainingResult",
+    "DETECTION_SCHEMA_VERSION",
+    # Exceptions
+    "DetectionError",
+    "ModelNotTrainedError",
+    "SchemaCompatibilityError",
+]
