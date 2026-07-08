@@ -1,50 +1,75 @@
-# CyberShield — AI-Driven Cyber Resilience Platform
-## Critical National Infrastructure Protection
+<div align="center">
+
+# 🛡️ CyberShield
+### AI-Driven Cyber Resilience for Critical National Infrastructure
+
+*Autonomous threat detection. Human-gated response. Zero-day ready.*
 
 [![CI](https://github.com/your-org/cybershield/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/cybershield/actions)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://python.org)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue?logo=python&logoColor=white)](https://python.org)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Mypy](https://img.shields.io/badge/mypy-strict-blue)](https://mypy.readthedocs.io)
+[![License](https://img.shields.io/badge/license-Proprietary-red)](#license)
+[![Status](https://img.shields.io/badge/status-active%20development-brightgreen)](#implementation-timeline)
+
+</div>
 
 ---
 
-## Overview
+## ⚡ What is CyberShield?
 
-**CyberShield Autonomous Response (CAR)** is a real-time anomaly detection and autonomous incident response platform for critical national infrastructure (CNI) protection.
+**CyberShield Autonomous Response (CAR)** is a real-time anomaly detection and autonomous incident response platform purpose-built for **critical national infrastructure (CNI)** — power grids, water systems, telecom backbones, and beyond.
 
-It combines:
-- **Unsupervised ML** (Isolation Forest) — detects zero-day attacks without labeled data
-- **Attack Graph Reasoning** (NetworkX + MITRE ATT&CK) — maps threat chains
-- **LLM Analysis** (Anthropic Claude) — explains threats in plain language
-- **Human-Gated Response** — SOC analyst approves all autonomous actions
+<table>
+<tr>
+<td width="25%" align="center">🧠<br><b>Unsupervised ML</b><br><sub>Isolation Forest catches zero-days without labeled data</sub></td>
+<td width="25%" align="center">🕸️<br><b>Attack Graph Reasoning</b><br><sub>NetworkX + MITRE ATT&CK maps the full kill chain</sub></td>
+<td width="25%" align="center">💬<br><b>LLM Analysis</b><br><sub>Claude explains threats in plain language</sub></td>
+<td width="25%" align="center">🧑‍✈️<br><b>Human-Gated Response</b><br><sub>SOC analysts approve every autonomous action</sub></td>
+</tr>
+</table>
 
-> ⚡ **Current status:** Module 1.1 — Repository Foundation  
-> The complete pipeline is implemented incrementally across 4 weeks.
+> ⚡ **Current status:** Module 1.1 — Repository Foundation
+> The complete pipeline ships incrementally across 4 weeks. See the [timeline](#-implementation-timeline) below.
 
 ---
 
-## Architecture
+## 🔄 Architecture at a Glance
 
+```mermaid
+flowchart LR
+    A[📥 Log Collection] --> B[🧹 Normalisation]
+    B --> C[⚙️ Feature Engineering]
+    C --> D[🌲 Isolation Forest]
+    D --> E[🔍 SHAP Explainability]
+    E --> F[🗺️ MITRE ATT&CK Mapping]
+    F --> G[🕸️ Attack Graph]
+    G --> H[💬 Claude LLM Reasoning]
+    H --> I[🧭 Response Orchestrator]
+    I --> J{🧑‍✈️ Human Approval Gate}
+    J -->|Approved| K[▶️ Action Execution]
+    K --> L[📜 Audit Log]
+    L --> M[📊 Dashboard]
+    J -->|Rejected| L
+
+    style J fill:#ff6b6b,stroke:#333,stroke-width:2px,color:#fff
+    style H fill:#4dabf7,stroke:#333,stroke-width:2px,color:#fff
+    style D fill:#51cf66,stroke:#333,stroke-width:2px,color:#fff
 ```
-Log Collection → Normalisation → Feature Engineering → Isolation Forest
-      → SHAP Explainability → MITRE ATT&CK Mapping → Attack Graph
-      → LLM Reasoning (Claude) → Response Orchestrator
-      → Human Approval Gate → Action Execution → Audit Log → Dashboard
-```
 
-See [docs/architecture.md](docs/architecture.md) for the full technical diagram.
+📄 Full technical breakdown: [`docs/architecture.md`](docs/architecture.md)
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
-
 - Python 3.11+
 - Docker & Docker Compose
 - Git
 
-### 1. Clone and Setup
+<details open>
+<summary><b>1️⃣ Clone and Setup</b></summary>
 
 ```bash
 git clone https://github.com/your-org/cybershield.git
@@ -52,8 +77,10 @@ cd cybershield
 chmod +x scripts/setup_dev.sh
 ./scripts/setup_dev.sh
 ```
+</details>
 
-### 2. Configure Environment
+<details>
+<summary><b>2️⃣ Configure Environment</b></summary>
 
 ```bash
 # Edit .env with your settings
@@ -63,8 +90,10 @@ nano .env
 # SECRET_KEY=<generated-secret>
 # ANTHROPIC_API_KEY=<your-key>  (required for Week 3+)
 ```
+</details>
 
-### 3. Run the Development Server
+<details>
+<summary><b>3️⃣ Run the Development Server</b></summary>
 
 ```bash
 # Activate virtual environment
@@ -74,28 +103,34 @@ source .venv/bin/activate
 make run
 ```
 
-The API is now available at:
-- **API:** http://localhost:8000
-- **Health:** http://localhost:8000/health
-- **Docs:** http://localhost:8000/docs
+| Endpoint | URL |
+|---|---|
+| 🌐 API | http://localhost:8000 |
+| ❤️ Health | http://localhost:8000/health |
+| 📚 Docs | http://localhost:8000/docs |
+</details>
 
-### 4. Run Tests
+<details>
+<summary><b>4️⃣ Run Tests</b></summary>
 
 ```bash
 make test        # full suite with coverage
 make test-fast   # fast, no coverage
 make test-unit   # unit tests only
 ```
+</details>
 
-### 5. Run Linting
+<details>
+<summary><b>5️⃣ Run Linting</b></summary>
 
 ```bash
 make lint        # ruff + mypy
 ```
+</details>
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 cybershield/
@@ -127,7 +162,7 @@ cybershield/
 
 ---
 
-## Development Workflow
+## 🛠️ Development Workflow
 
 | Command | Description |
 |---------|-------------|
@@ -142,12 +177,14 @@ cybershield/
 
 ---
 
-## Technology Stack
+## 🧰 Technology Stack
+
+<div align="center">
 
 | Layer | Technology |
-|-------|-----------|
-| Language | Python 3.11+ |
-| Web Framework | FastAPI |
+|:---:|:---:|
+| Language | ![Python](https://img.shields.io/badge/-Python-3776AB?logo=python&logoColor=white) |
+| Web Framework | ![FastAPI](https://img.shields.io/badge/-FastAPI-009688?logo=fastapi&logoColor=white) |
 | ML | scikit-learn (Isolation Forest) |
 | Explainability | SHAP |
 | Graph | NetworkX |
@@ -155,13 +192,15 @@ cybershield/
 | Logging | structlog (JSON) |
 | Config | Pydantic Settings |
 | Database | SQLite (dev) → PostgreSQL (prod) |
-| Container | Docker |
+| Container | ![Docker](https://img.shields.io/badge/-Docker-2496ED?logo=docker&logoColor=white) |
 | Testing | pytest + pytest-cov |
 | Linting | ruff + mypy |
 
+</div>
+
 ---
 
-## Documentation
+## 📚 Documentation
 
 | Document | Description |
 |----------|-------------|
@@ -172,10 +211,10 @@ cybershield/
 
 ---
 
-## Implementation Timeline
+## 🗓️ Implementation Timeline
 
 | Week | Module | Status |
-|------|--------|--------|
+|:---:|---|:---:|
 | 0 | Learning + Research | ✅ Complete |
 | **1** | **1.1 Repository Foundation** | ✅ **This PR** |
 | 1 | 1.2–1.4 Log Pipeline + Features | ⏳ Next |
@@ -183,8 +222,16 @@ cybershield/
 | 3 | 3.x LLM + Response | ⏳ Planned |
 | 4 | 4.x Polish + Demo | ⏳ Planned |
 
+```
+Progress: [██░░░░░░░░░░░░░░░░░░] 1/5 weeks
+```
+
 ---
 
-## License
+## 📄 License
 
 Proprietary — CyberShield Team. All rights reserved.
+
+<div align="center">
+<sub>Built with 🛡️ for the infrastructure that keeps the lights on.</sub>
+</div>
