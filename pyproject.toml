@@ -37,6 +37,7 @@ ml = [
     "scikit-learn>=1.5.0",
     "numpy>=1.26.0",
     "shap>=0.45.0",
+    "numba==0.61.0",  # pinned: 0.66.0 conflicts with coverage>=7.x (breaks SHAP tests)
     "networkx>=3.3",
     "pandas>=2.2.0",
 ]
