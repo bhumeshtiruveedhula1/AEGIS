@@ -17,7 +17,7 @@ Module 2.4 implements the **Behavioral Detection Core** — the first AI compone
 DetectionService          ← public entry point (orchestration only)
   ├── IsolationForestTrainer  ← training only
   │     └── FeaturePreprocessor  ← StandardScaler fit + transform
-  ├── AnomalyScorer            ← inference only (sigmoid normalisation)
+  ├── AnomalyScorer            ← inference only (linear rescale normalisation)
   └── ModelStore               ← versioned persistence (atomic pkl + JSON)
 ```
 
@@ -39,7 +39,7 @@ backend/detection/
 ├── storage.py          ModelStore — atomic versioned model persistence
 ├── preprocessor.py     FeaturePreprocessor — StandardScaler lifecycle + schema validation
 ├── trainer.py          IsolationForestTrainer — full train + incremental retrain
-├── scorer.py           AnomalyScorer — sigmoid score normalisation, single/batch/stream
+├── scorer.py           AnomalyScorer — linear rescale normalisation, single/batch/stream
 └── service.py          DetectionService — orchestrates all layers
 ```
 
@@ -110,19 +110,25 @@ Raw IsolationForest `decision_function()` values:
 - Negative → anomalous (further from 0 = more anomalous)
 - Positive → normal
 
-Mapped to `[0, 1]` via sigmoid inversion:
+Mapped to `[0, 1]` via **linear rescale**:
 
 ```
-anomaly_score = 1 / (1 + exp(raw_if_score))
+anomaly_score = 1.0 - (clamp(raw_if_score, -0.5, 0.5) + 0.5)
 ```
+
+Why linear rescale (not sigmoid): IsolationForest `decision_function()` values cluster in a narrow band (typically `[-0.05, +0.05]`). Sigmoid maps this entire range to `[0.49, 0.51]` — attack vs normal becomes indistinguishable. Linear rescale preserves the full separation in the output space.
 
 | Raw IF Score | Anomaly Score | Interpretation |
 |---|---|---|
-| −3.0 | ~0.95 | Highly anomalous |
-| −1.0 | ~0.73 | Anomalous |
-| 0.0 | ~0.50 | Decision boundary |
-| +1.0 | ~0.27 | Normal |
-| +3.0 | ~0.05 | Highly normal |
+| −0.50 | 1.00 | Maximally anomalous (clamped) |
+| −0.25 | 0.75 | Strongly anomalous |
+| 0.00 | 0.50 | Decision boundary |
+| +0.25 | 0.25 | Clearly normal |
+| +0.50 | 0.00 | Maximally normal (clamped) |
+
+> **NEG-05 guard:** Records with `baseline_available=False` AND all-zero feature values
+> are rejected before scoring (return `None` with a warning log). These carry no
+> behavioral signal and would produce meaningless near-0.5 scores.
 
 ---
 
@@ -230,7 +236,7 @@ The following hooks are designed into the architecture for future modules:
 | SHAP explainability | `DetectionAlert.raw_feature_values` preserved | Ready (not implemented) |
 | MITRE ATT&CK mapping | Consumes `DetectionAlert` | Module 3.1 |
 | LLM enrichment | Consumes `DetectionAlert` | Module 3.2 |
-| Model calibration (Platt) | Replace sigmoid in `scorer.py` | Future |
+| Model calibration (Platt) | `scorer.py` uses linear rescale; Platt scaling is a drop-in future upgrade | Future |
 | ONNX export | Replace pickle in `storage.py` | Future |
 | Multi-dimension scoring | Set `entity_dim` per detection run | Configurable now |
 
@@ -251,5 +257,5 @@ pytest tests/ --no-cov -q
 - Atomic storage write/load, schema validation
 - Preprocessor fit/transform lifecycle
 - Trainer reproducibility, entity dim filtering
-- Scorer sigmoid normalisation, single/batch/stream inference
+- Scorer linear rescale normalisation, single/batch/stream inference
 - Service end-to-end: training, inference, JSONL loading, error handling

@@ -45,13 +45,13 @@ python -m venv .venv
 # Install all dependencies
 pip install -e ".[dev]"
 
-# Confirm 1541 tests pass
+# Confirm 1542 tests pass
 python -m pytest tests/ --no-cov -q -p no:cacheprovider
 ```
 
 **Expected final line:**
 ```
-1541 passed in XX.XXs
+1542 passed in XX.XXs
 ```
 
 ### Daily Session Start
@@ -106,7 +106,7 @@ cybershield/
 │
 ├── tests/
 │   ├── conftest.py              ← Shared fixtures
-│   └── unit/                   ← All unit tests (1541 total)
+│   └── unit/                   ← All unit tests (1542 total)
 │       ├── detection/           ← 97 tests
 │       ├── explainability/      ← 73 tests
 │       ├── mitre/               ← 88 tests
@@ -203,7 +203,7 @@ NormalizationPipeline  →  CanonicalEvent  (data/normalized/)
 ```powershell
 .\.venv\Scripts\Activate.ps1
 python -m pytest tests/ --no-cov -q -p no:cacheprovider
-# Must show: 1541 passed
+# Must show: 1542 passed
 ```
 
 ### Making Changes
@@ -631,7 +631,7 @@ pip install -e ".[dev]"
 
 # Confirm test count
 python -m pytest tests/ --no-cov -q -p no:cacheprovider
-# Expected: 1541 passed
+# Expected: 1542 passed
 ```
 
 ### Import Error After Adding Module

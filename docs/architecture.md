@@ -2,8 +2,8 @@
 
 **Operation AEGIS · AI-Driven Cyber Resilience Platform for Critical National Infrastructure**
 
-**Status:** Phases 1–4.1 Complete | **Tests:** 1541 passed / 0 failures
-**Branch:** `phase-3-behavioral-detection`
+**Status:** Phases 1–4.1 Complete | **Tests:** 1542 passed / 0 failures
+**Branch:** `main`
 
 ---
 
@@ -107,7 +107,7 @@
 | 5.2 | Response Orchestrator | `backend/response/` | — | ⏳ |
 | 5.3 | Dashboard | `backend/dashboard/` | — | ⏳ |
 
-**Total tests: 1541 passed / 0 failures**
+**Total tests: 1542 passed / 0 failures**
 
 ---
 
@@ -164,7 +164,7 @@ EntityKey(entity_type="user", entity_id="alice")
 {
   "alert_id":            "alert-uuid",
   "entity_key":          {"entity_type": "user", "entity_id": "alice"},
-  "anomaly_score":       0.85,              # sigmoid-normalised ∈ [0.0, 1.0]
+  "anomaly_score":       0.85,              # linear-rescale normalised ∈ [0.0, 1.0]
   "raw_if_score":        -0.12,             # raw IsolationForest score
   "threshold_used":      0.5,
   "is_alert":            true,              # anomaly_score > threshold_used
@@ -387,7 +387,7 @@ Module 3.X provides 10 built-in templates for pipeline testing without live atta
 
 | Metric | Target | Current |
 |--------|--------|---------|
-| Test suite pass rate | 100% | ✅ 1541/1541 |
+| Test suite pass rate | 100% | ✅ 1542/1542 |
 | Normal event false positive rate | < 5% | Validated via synthetic baseline |
 | Brute-force detection rate | > 90% | Validated via `brute_force_auth` template |
 | MITRE technique coverage | 36 techniques, 16 tactics | ✅ ATT&CK v15 |
