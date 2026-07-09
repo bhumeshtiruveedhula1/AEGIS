@@ -8,7 +8,7 @@ from __future__ import annotations
 import pytest
 
 from backend.detection.models import DetectionAlert, DetectionResult
-from backend.detection.scorer import AnomalyScorer, _sigmoid_score
+from backend.detection.scorer import AnomalyScorer, _linear_anomaly_score
 from backend.detection.trainer import IsolationForestTrainer
 from backend.features.models import FEATURE_DIMENSION
 from tests.unit.detection.conftest import (
@@ -17,41 +17,46 @@ from tests.unit.detection.conftest import (
 )
 
 # ---------------------------------------------------------------------------
-# _sigmoid_score unit tests
+# _linear_anomaly_score unit tests
 # ---------------------------------------------------------------------------
 
 
-class TestSigmoidScore:
-    def test_boundary_near_half(self) -> None:
-        """decision_function=0 → score ≈ 0.5"""
-        assert _sigmoid_score(0.0) == pytest.approx(0.5, abs=1e-6)
+class TestLinearAnomalyScore:
+    def test_boundary_is_half(self) -> None:
+        """decision_function=0 -> score exactly 0.5"""
+        assert _linear_anomaly_score(0.0) == pytest.approx(0.5, abs=1e-6)
 
     def test_negative_input_above_half(self) -> None:
-        """Negative IF score (anomalous) → score > 0.5"""
-        assert _sigmoid_score(-1.0) > 0.5
+        """Negative IF score (anomalous) -> score > 0.5"""
+        assert _linear_anomaly_score(-0.1) > 0.5
 
     def test_positive_input_below_half(self) -> None:
-        """Positive IF score (normal) → score < 0.5"""
-        assert _sigmoid_score(1.0) < 0.5
+        """Positive IF score (normal) -> score < 0.5"""
+        assert _linear_anomaly_score(0.1) < 0.5
 
     def test_output_in_range(self) -> None:
-        for raw in [-10.0, -1.0, -0.1, 0.0, 0.1, 1.0, 10.0]:
-            s = _sigmoid_score(raw)
+        for raw in [-0.5, -0.3, -0.1, 0.0, 0.1, 0.3, 0.5]:
+            s = _linear_anomaly_score(raw)
             assert 0.0 <= s <= 1.0
 
     def test_nan_returns_zero(self) -> None:
-        assert _sigmoid_score(float("nan")) == 0.0
+        assert _linear_anomaly_score(float("nan")) == 0.0
 
     def test_inf_returns_valid(self) -> None:
         # Non-finite inputs are caught by the math.isfinite guard and return 0.0
-        assert _sigmoid_score(float("inf")) == 0.0
-        assert _sigmoid_score(float("-inf")) == 0.0
+        assert _linear_anomaly_score(float("inf")) == 0.0
+        assert _linear_anomaly_score(float("-inf")) == 0.0
 
     def test_monotonically_decreasing(self) -> None:
-        """Higher raw score (more normal) → lower anomaly score."""
-        scores = [_sigmoid_score(x) for x in [-2.0, -1.0, 0.0, 1.0, 2.0]]
+        """Higher raw score (more normal) -> lower anomaly score."""
+        scores = [_linear_anomaly_score(x) for x in [-0.4, -0.2, 0.0, 0.2, 0.4]]
         for a, b in zip(scores, scores[1:], strict=False):
             assert a > b
+
+    def test_clamps_beyond_range(self) -> None:
+        """Values outside [-0.5, 0.5] are clamped, not wrapped."""
+        assert _linear_anomaly_score(-1.0) == _linear_anomaly_score(-0.5)
+        assert _linear_anomaly_score(1.0) == _linear_anomaly_score(0.5)
 
 
 # ---------------------------------------------------------------------------

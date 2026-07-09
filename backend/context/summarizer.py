@@ -297,7 +297,7 @@ class BehavioralSummarizer:
         """Extract behavioral novelty from DetectionAlert and optional FeatureRecord."""
         raw_features: dict[str, float] = {}
         if feature_record:
-            raw_features = {k: float(v) for k, v in feature_record.feature_vector.items()}
+            raw_features = {k: float(v) for k, v in feature_record.feature_vector.values.items()}
 
         ek = alert.entity_key
         entity_key_str = f"{ek.entity_type}::{ek.entity_id}" if hasattr(ek, "entity_type") else str(ek)

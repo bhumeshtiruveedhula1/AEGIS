@@ -59,15 +59,35 @@ from backend.features.models import FeatureRecord
 logger = structlog.get_logger(__name__)
 
 
-def _sigmoid_score(raw_if_score: float) -> float:
+def _linear_anomaly_score(raw_if_score: float) -> float:
     """
-    Map an IF decision_function value to [0, 1].
+    Map an IsolationForest decision_function value to [0, 1].
+
+    IsolationForest.decision_function() returns values roughly in [-0.5, +0.5]:
+      - Negative  -> anomalous (further from 0 = more anomalous)
+      - Positive  -> normal
+      - 0         -> decision boundary
+
+    The previous sigmoid transform compressed all values near 0.5 because
+    real IF outputs are small (e.g. [-0.05, +0.05]) and sigmoid(x) ~= 0.5
+    for any x near 0. Diagnostic confirmed brute-force attacks scored
+    identically to normal traffic (0.4992 vs 0.4897).
+
+    Linear rescale:
+      score = 1.0 - (clamp(x, -0.5, 0.5) + 0.5)
+
+    Properties:
+      - x = -0.5 (maximally anomalous) -> score = 1.0
+      - x =  0.0 (boundary)            -> score = 0.5
+      - x = +0.5 (maximally normal)    -> score = 0.0
+      - Monotonic, bounded, no squashing.
 
     Returns 0.0 for non-finite inputs (safety net).
     """
     if not math.isfinite(raw_if_score):
         return 0.0
-    return round(1.0 / (1.0 + math.exp(raw_if_score)), 6)
+    clamped = max(-0.5, min(0.5, raw_if_score))
+    return round(1.0 - (clamped + 0.5), 6)
 
 
 class AnomalyScorer:
@@ -148,9 +168,22 @@ class AnomalyScorer:
         ------
         SchemaCompatibilityError if feature dimension mismatches.
         """
+        # NEG-05 guard: reject all-zero feature vectors — they carry no
+        # behavioral signal and will score near 0.5 regardless of the model,
+        # producing spurious non-alerts and masking real empty-baseline issues.
+        feature_array = record.feature_vector.to_array()
+        if all(v == 0.0 for v in feature_array):
+            logger.warning(
+                "empty_feature_vector_skipped",
+                entity_type=record.entity_key.entity_type,
+                entity_id=record.entity_key.entity_id,
+                baseline_available=record.baseline_available,
+            )
+            return None
+
         X = self._pipeline.preprocessor.transform_single(record)
         raw_score = float(self._pipeline.isolation_forest.decision_function(X)[0])
-        anomaly_score = _sigmoid_score(raw_score)
+        anomaly_score = _linear_anomaly_score(raw_score)
 
         if anomaly_score < self._threshold:
             return None
@@ -192,8 +225,19 @@ class AnomalyScorer:
         started_at = datetime.now(UTC)
         run_id_val = _make_run_id()
 
-        # Filter to target dimension
-        to_score = [r for r in records if r.entity_key.entity_type == target_dim]
+        # Filter to target dimension and skip all-zero feature vectors (NEG-05)
+        to_score = [
+            r for r in records
+            if r.entity_key.entity_type == target_dim
+            and not all(v == 0.0 for v in r.feature_vector.to_array())
+        ]
+        empty_skipped = sum(
+            1 for r in records
+            if r.entity_key.entity_type == target_dim
+            and all(v == 0.0 for v in r.feature_vector.to_array())
+        )
+        if empty_skipped:
+            logger.warning("batch_empty_vectors_skipped", count=empty_skipped, entity_dim=target_dim)
 
         result = DetectionResult(
             run_id=run_id_val,
@@ -240,7 +284,7 @@ class AnomalyScorer:
         for i, record in enumerate(to_score):
             try:
                 raw_score = float(raw_scores[i])
-                anomaly_score = _sigmoid_score(raw_score)
+                anomaly_score = _linear_anomaly_score(raw_score)
                 if anomaly_score >= self._threshold:
                     alert = self._build_alert(record, raw_score, anomaly_score)
                     alerts.append(alert)
