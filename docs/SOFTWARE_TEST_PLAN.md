@@ -13,9 +13,10 @@
 | Scope | Modules through Attack Context Generation (4.1) |
 | Out of Scope | LLM Agent, Response Orchestrator, Dashboard, Audit Ledger, SOAR |
 | Audience | Developers, QA Engineers, Cybersecurity Evaluators, Hackathon Judges |
-| Branch | `phase-3-behavioral-detection` |
-| Tests Passing | 1541 / 0 failures |
-| Last Updated | 2026-07-08 |
+| Branch | `main` |
+| Tests Passing | 1542 / 0 failures |
+| Last Updated | 2026-07-09 |
+| Storage Round-Trip | PASS (76 tests, verified 2026-07-09) |
 
 ---
 
@@ -206,7 +207,7 @@ The Digital Twin simulates a realistic enterprise environment: hosts, users, pro
 
 ### Prerequisites
 ```powershell
-from backend.digital_twin import DigitalTwin
+from backend.digital_twin.registry import DigitalTwinRegistry
 ```
 
 ### Test Inputs
@@ -216,16 +217,15 @@ from backend.digital_twin import DigitalTwin
 
 ### Execution Steps
 ```python
-from backend.digital_twin import DigitalTwin
+from backend.digital_twin.registry import DigitalTwinRegistry
 
-twin = DigitalTwin()
-events = twin.generate_events(count=1000)
-
-# Verify structure
-for event in events:
-    assert event.host is not None
-    assert event.timestamp is not None
-    assert event.event_type in ["authentication", "process", "network", "ot_modbus", "file"]
+registry = DigitalTwinRegistry()
+topology = registry.get_topology()
+print(f'Network segments: {len(topology.segments)}')
+sources = registry.list_telemetry_sources()
+print(f'Telemetry sources: {[s.name for s in sources]}')
+health = registry.get_digital_twin_health()
+print(f'Health status: {health.overall_status}')
 ```
 
 ### Expected Output
@@ -794,14 +794,14 @@ from backend.normalization.models import CanonicalEvent
 **Run:**
 ```powershell
 python -c "
-from backend.digital_twin import DigitalTwin
-twin = DigitalTwin()
-events = twin.generate_events(count=100)
-print(f'Generated {len(events)} events')
-types = set(e.event_type for e in events)
-print(f'Event types: {types}')
-hosts = set(e.host for e in events)
-print(f'Hosts: {hosts}')
+from backend.digital_twin.registry import DigitalTwinRegistry
+registry = DigitalTwinRegistry()
+topology = registry.get_topology()
+print(f'Network segments: {len(topology.segments)}')
+sources = registry.list_telemetry_sources()
+print(f'Telemetry sources: {[s.name for s in sources]}')
+health = registry.get_digital_twin_health()
+print(f'Health status: {health.overall_status}')
 "
 ```
 
@@ -901,7 +901,7 @@ print('Feature dimension:', svc.get_feature_dimension())
 python -c "
 from backend.detection.service import DetectionService
 svc = DetectionService()
-status = svc.get_model_status()
+status = svc.get_status()
 print('Model status:', status)
 "
 ```
@@ -938,9 +938,9 @@ print('SHAP status:', status)
 python -c "
 from backend.mitre.knowledge_base import MitreKnowledgeBase
 kb = MitreKnowledgeBase()
-print('Techniques loaded:', len(kb.get_all_techniques()))
+print('Techniques loaded:', len(kb.all_techniques()))
 print('Sample T1110:', kb.get_technique('T1110').name)
-print('Knowledge version:', kb.version)
+print('Sample tactics:', [t.name for t in kb.all_tactics()[:3]])
 "
 ```
 
