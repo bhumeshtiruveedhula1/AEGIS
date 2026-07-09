@@ -168,11 +168,12 @@ class AnomalyScorer:
         ------
         SchemaCompatibilityError if feature dimension mismatches.
         """
-        # NEG-05 guard: reject all-zero feature vectors — they carry no
-        # behavioral signal and will score near 0.5 regardless of the model,
-        # producing spurious non-alerts and masking real empty-baseline issues.
-        feature_array = record.feature_vector.to_array()
-        if all(v == 0.0 for v in feature_array):
+        # NEG-05 guard: reject records that have no baseline AND all-zero features.
+        # These carry zero behavioral signal — the Feature Engine could not compute
+        # any meaningful values because the entity was never observed during training.
+        # Records with baseline_available=True may legitimately be all-zero
+        # (entity observed but no anomalous activity detected) and must be scored.
+        if not record.baseline_available and all(v == 0.0 for v in record.feature_vector.to_array()):
             logger.warning(
                 "empty_feature_vector_skipped",
                 entity_type=record.entity_key.entity_type,
@@ -225,17 +226,14 @@ class AnomalyScorer:
         started_at = datetime.now(UTC)
         run_id_val = _make_run_id()
 
-        # Filter to target dimension and skip all-zero feature vectors (NEG-05)
-        to_score = [
-            r for r in records
-            if r.entity_key.entity_type == target_dim
-            and not all(v == 0.0 for v in r.feature_vector.to_array())
-        ]
-        empty_skipped = sum(
-            1 for r in records
-            if r.entity_key.entity_type == target_dim
-            and all(v == 0.0 for v in r.feature_vector.to_array())
-        )
+        # Filter to target dimension; skip no-baseline + all-zero records (NEG-05).
+        # Records with baseline_available=True may legitimately have all-zero features
+        # (quiet entity, no anomalous activity) and must be scored normally.
+        def _is_empty(r: FeatureRecord) -> bool:
+            return not r.baseline_available and all(v == 0.0 for v in r.feature_vector.to_array())
+
+        to_score = [r for r in records if r.entity_key.entity_type == target_dim and not _is_empty(r)]
+        empty_skipped = sum(1 for r in records if r.entity_key.entity_type == target_dim and _is_empty(r))
         if empty_skipped:
             logger.warning("batch_empty_vectors_skipped", count=empty_skipped, entity_dim=target_dim)
 

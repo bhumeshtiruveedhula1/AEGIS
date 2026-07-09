@@ -159,11 +159,11 @@ class TestDetectionAlert:
         """The field_validator replaces NaN with 0.0 via the _validate_score method."""
         import math
 
-        from backend.detection.scorer import _sigmoid_score
+        from backend.detection.scorer import _linear_anomaly_score
 
         # Test the scorer's NaN handling (Pydantic ge/le prevents raw NaN in the model)
-        assert _sigmoid_score(float("nan")) == 0.0
-        assert math.isfinite(_sigmoid_score(float("nan")))
+        assert _linear_anomaly_score(float("nan")) == 0.0
+        assert math.isfinite(_linear_anomaly_score(float("nan")))
 
     def test_to_summary_keys(self, valid_alert: DetectionAlert) -> None:
         summary = valid_alert.to_summary()
