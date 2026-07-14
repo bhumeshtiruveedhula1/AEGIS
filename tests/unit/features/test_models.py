@@ -6,39 +6,45 @@ Unit tests for Feature Engine data models.
 
 from __future__ import annotations
 
-import math
-
 import pytest
 
+from backend.baseline.models import EntityKey
 from backend.features.models import (
+    ALL_FEATURE_NAMES,
     FEATURE_DIMENSION,
     FEATURE_GROUPS,
     FEATURE_SCHEMA_VERSION,
-    ALL_FEATURE_NAMES,
     FeaturePipelineReport,
     FeatureRecord,
     FeatureSchema,
     FeatureVector,
 )
-from backend.baseline.models import EntityKey
-from tests.unit.features.conftest import make_hospital_event, FIXED_TS
-
+from tests.unit.features.conftest import FIXED_TS, make_hospital_event
 
 # ===========================================================================
 # Schema constants
 # ===========================================================================
 
+
 class TestSchemaConstants:
-
     def test_feature_dimension_matches_all_names(self) -> None:
-        assert FEATURE_DIMENSION == len(ALL_FEATURE_NAMES)
+        assert len(ALL_FEATURE_NAMES) == FEATURE_DIMENSION
 
-    def test_feature_dimension_is_56(self) -> None:
-        assert FEATURE_DIMENSION == 56
+    def test_feature_dimension_is_57(self) -> None:
+        # auth_unexpected_failure added to FEATURE_GROUPS['frequency'] during ML lab build
+        assert FEATURE_DIMENSION == 57
 
     def test_all_groups_present(self) -> None:
-        expected = {"temporal", "frequency", "network", "process", "auth", "ot",
-                    "baseline_presence", "entity_activity"}
+        expected = {
+            "temporal",
+            "frequency",
+            "network",
+            "process",
+            "auth",
+            "ot",
+            "baseline_presence",
+            "entity_activity",
+        }
         assert set(FEATURE_GROUPS.keys()) == expected
 
     def test_group_feature_names_sum_to_dimension(self) -> None:
@@ -58,8 +64,8 @@ class TestSchemaConstants:
 # FeatureSchema
 # ===========================================================================
 
-class TestFeatureSchema:
 
+class TestFeatureSchema:
     def test_index_of_known_feature(self) -> None:
         schema = FeatureSchema()
         idx = schema.index_of("hour_of_day")
@@ -93,6 +99,7 @@ class TestFeatureSchema:
 # ===========================================================================
 # FeatureVector
 # ===========================================================================
+
 
 class TestFeatureVector:
     """Tests for FeatureVector construction, validation, and helpers."""
@@ -183,11 +190,14 @@ class TestFeatureVector:
 
     def test_novelty_count_correct_when_flagged(self) -> None:
         key = self._make_key()
-        vec = FeatureVector(entity_key=key, values={
-            "dst_ip_is_novel": 1.0,
-            "process_is_novel": 1.0,
-            "supervisory_host_is_novel": 0.0,
-        })
+        vec = FeatureVector(
+            entity_key=key,
+            values={
+                "dst_ip_is_novel": 1.0,
+                "process_is_novel": 1.0,
+                "supervisory_host_is_novel": 0.0,
+            },
+        )
         assert vec.novelty_count() == 2
 
     def test_schema_version_set_correctly(self) -> None:
@@ -200,8 +210,8 @@ class TestFeatureVector:
 # FeatureRecord
 # ===========================================================================
 
-class TestFeatureRecord:
 
+class TestFeatureRecord:
     def _make_record(self) -> FeatureRecord:
         key = EntityKey(entity_type="user", entity_id="svc-iis")
         vec = FeatureVector(entity_key=key, values={"hour_of_day": 9.0})
@@ -221,6 +231,7 @@ class TestFeatureRecord:
     def test_record_has_record_id(self) -> None:
         r = self._make_record()
         import uuid
+
         uuid.UUID(r.record_id)
 
     def test_to_flat_dict_contains_all_features(self) -> None:
@@ -252,15 +263,13 @@ class TestFeatureRecord:
 # FeaturePipelineReport
 # ===========================================================================
 
-class TestFeaturePipelineReport:
 
+class TestFeaturePipelineReport:
     def test_duration_none_when_not_completed(self) -> None:
         report = FeaturePipelineReport(completed_at=None)
         assert report.duration_seconds is None
 
     def test_duration_positive_when_completed(self) -> None:
-        from datetime import timedelta
-        from datetime import UTC
         start = FIXED_TS
         report = FeaturePipelineReport(
             started_at=start,

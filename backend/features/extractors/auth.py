@@ -25,6 +25,15 @@ Design notes
   Network logons (type 3) from a normally interactive account are suspicious.
 - auth_failure_rate_baseline gives downstream models a reference rate to
   compare against short-window failure rates (Module 2.3+).
+
+Cold-start novelty default — Architectural Decision (F02, Option A)
+--------------------------------------------------------------------
+logon_type_is_novel, auth_package_is_novel, windows_event_id_is_novel
+all default to 0.0 when baseline (or auth sub-baseline) is None.
+
+Rationale: same as network/process extractors — novelty is undefined
+without a reference set. The `baseline_presence` group carries cold-start
+signalling. See network.py module docstring for full rationale.
 """
 
 from __future__ import annotations
@@ -59,8 +68,8 @@ class AuthExtractor(BaseExtractor):
 
     def extract(
         self,
-        event: "CanonicalEvent",
-        baseline: "EntityBaseline | None",
+        event: CanonicalEvent,
+        baseline: EntityBaseline | None,
     ) -> dict[str, float]:
         auth: AuthBaseline | None = None
         if baseline is not None:
@@ -84,9 +93,7 @@ class AuthExtractor(BaseExtractor):
                     event.logon_type.lower()
                     not in {k.lower() for k in auth.logon_type_distribution}
                 )
-                logon_freq = safe_frequency(
-                    event.logon_type, auth.logon_type_distribution
-                )
+                logon_freq = safe_frequency(event.logon_type, auth.logon_type_distribution)
 
         # ── Auth package novelty / frequency ───────────────────────────────
         pkg_novel = 0.0
@@ -97,9 +104,7 @@ class AuthExtractor(BaseExtractor):
                     event.auth_package.lower()
                     not in {k.lower() for k in auth.auth_package_distribution}
                 )
-                pkg_freq = safe_frequency(
-                    event.auth_package, auth.auth_package_distribution
-                )
+                pkg_freq = safe_frequency(event.auth_package, auth.auth_package_distribution)
 
         # ── Auth failure rate ──────────────────────────────────────────────
         auth_fail_rate = 0.0
@@ -115,8 +120,7 @@ class AuthExtractor(BaseExtractor):
         evid_novel = 0.0
         if event.windows_event_id is not None and auth is not None:
             evid_novel = binary(
-                str(event.windows_event_id)
-                not in auth.windows_event_id_distribution
+                str(event.windows_event_id) not in auth.windows_event_id_distribution
             )
 
         return {

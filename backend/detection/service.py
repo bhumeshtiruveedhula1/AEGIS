@@ -71,6 +71,51 @@ from backend.features.models import FeatureRecord
 
 logger = structlog.get_logger(__name__)
 
+_CALIBRATOR_SUFFIX = "_calibrator.pkl"
+_CAL_THRESHOLD_SUFFIX = "_cal_threshold.json"
+
+
+def _load_calibrator_for_model(
+    store_dir: Path,
+    model_id: str,
+) -> tuple[object, float] | tuple[None, None]:
+    """
+    Load a calibrator + its threshold for the given model_id if present.
+
+    Looks for:
+      <store_dir>/isolation_forest_<model_id>_calibrator.pkl
+      <store_dir>/isolation_forest_<model_id>_cal_threshold.json
+
+    Returns (calibrator, calibrated_threshold) or (None, None) if not found.
+    Failure is always non-fatal: logs a warning and returns (None, None).
+    """
+    import json
+    import pickle as _pickle
+
+    cal_path = store_dir / f"isolation_forest_{model_id}{_CALIBRATOR_SUFFIX}"
+    thr_path = store_dir / f"isolation_forest_{model_id}{_CAL_THRESHOLD_SUFFIX}"
+    if not cal_path.exists() or not thr_path.exists():
+        return None, None
+    try:
+        with cal_path.open("rb") as fh:
+            calibrator = _pickle.load(fh)
+        threshold = float(json.loads(thr_path.read_text())["calibrated_threshold"])
+        logger.info(
+            "calibrator_loaded",
+            model_id=model_id,
+            calibrated_threshold=threshold,
+            calibrator_path=str(cal_path),
+        )
+        return calibrator, threshold
+    except Exception as exc:
+        logger.warning(
+            "calibrator_load_failed",
+            model_id=model_id,
+            error=str(exc),
+            note="Falling back to uncalibrated scoring.",
+        )
+        return None, None
+
 
 class DetectionService:
     """
@@ -194,8 +239,15 @@ class DetectionService:
             }
         )
 
-        # Reload into memory immediately
-        self._scorer = AnomalyScorer(pipeline, metadata, threshold=self._threshold)
+        # Reload into memory immediately — with calibrator if available
+        calibrator, cal_threshold = _load_calibrator_for_model(self._store._dir, metadata.model_id)
+        self._scorer = AnomalyScorer(
+            pipeline,
+            metadata,
+            threshold=self._threshold,
+            calibrator=calibrator,
+            calibrated_threshold=cal_threshold,
+        )
         self._current_metadata = metadata
 
         logger.info(
@@ -254,7 +306,14 @@ class DetectionService:
             }
         )
 
-        self._scorer = AnomalyScorer(pipeline, metadata, threshold=self._threshold)
+        calibrator, cal_threshold = _load_calibrator_for_model(self._store._dir, metadata.model_id)
+        self._scorer = AnomalyScorer(
+            pipeline,
+            metadata,
+            threshold=self._threshold,
+            calibrator=calibrator,
+            calibrated_threshold=cal_threshold,
+        )
         self._current_metadata = metadata
 
         logger.info(
@@ -371,7 +430,14 @@ class DetectionService:
         else:
             pipeline, metadata = self._store.load_latest()
 
-        self._scorer = AnomalyScorer(pipeline, metadata, threshold=self._threshold)
+        calibrator, cal_threshold = _load_calibrator_for_model(self._store._dir, metadata.model_id)
+        self._scorer = AnomalyScorer(
+            pipeline,
+            metadata,
+            threshold=self._threshold,
+            calibrator=calibrator,
+            calibrated_threshold=cal_threshold,
+        )
         self._current_metadata = metadata
 
         logger.info(
@@ -424,7 +490,16 @@ class DetectionService:
         """Attempt to load the latest model; log and continue if none exists."""
         try:
             pipeline, metadata = self._store.load_latest()
-            self._scorer = AnomalyScorer(pipeline, metadata, threshold=self._threshold)
+            calibrator, cal_threshold = _load_calibrator_for_model(
+                self._store._dir, metadata.model_id
+            )
+            self._scorer = AnomalyScorer(
+                pipeline,
+                metadata,
+                threshold=self._threshold,
+                calibrator=calibrator,
+                calibrated_threshold=cal_threshold,
+            )
             self._current_metadata = metadata
             logger.info(
                 "model_auto_loaded",

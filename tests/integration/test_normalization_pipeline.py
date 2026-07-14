@@ -31,14 +31,10 @@ Runs in under 5 seconds (no Docker, no network).
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock
 
-import pytest
-
-from backend.normalization.models import CanonicalEvent
 from backend.normalization.pipeline import NormalizationPipeline
 from backend.normalization.writer import NormalizedEventWriter
 from tests.unit.normalization.conftest import (
@@ -49,10 +45,10 @@ from tests.unit.normalization.conftest import (
     write_jsonl,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _mock_registry(*file_specs: tuple[str, Path]) -> MagicMock:
     """Build a registry mock from (source_name, path) pairs."""
@@ -60,7 +56,7 @@ def _mock_registry(*file_specs: tuple[str, Path]) -> MagicMock:
     sources = []
     for role, path in file_specs:
         src = MagicMock()
-        src.role = role
+        src.container_role = role  # matches TelemetrySource.container_role (digital_twin/models.py)
         src.host_log_path = path
         sources.append(src)
     registry.list_telemetry_sources.return_value = sources
@@ -88,14 +84,13 @@ CANONICAL_REQUIRED_KEYS = {
 # Integration: 4-source pipeline
 # ===========================================================================
 
+
 class TestFullPipeline:
     """
     Full end-to-end pipeline with all 4 Digital Twin sources.
     """
 
-    def test_four_source_pipeline_produces_correct_event_count(
-        self, tmp_path: Path
-    ) -> None:
+    def test_four_source_pipeline_produces_correct_event_count(self, tmp_path: Path) -> None:
         """All events from all sources are normalized and written."""
         h_file = tmp_path / "hospital_server.jsonl"
         dc_file = tmp_path / "domain_controller.jsonl"
@@ -127,9 +122,9 @@ class TestFullPipeline:
         out_dir = tmp_path / "normalized"
         NormalizationPipeline(registry, output_dir=out_dir).run()
 
-        output_lines = (out_dir / "normalized_events.jsonl").read_text(
-            encoding="utf-8"
-        ).strip().splitlines()
+        output_lines = (
+            (out_dir / "normalized_events.jsonl").read_text(encoding="utf-8").strip().splitlines()
+        )
         assert len(output_lines) == 100
 
     def test_all_sources_represented_in_output(self, tmp_path: Path) -> None:
@@ -154,29 +149,24 @@ class TestFullPipeline:
 
         records = NormalizedEventWriter.read_all(out_dir / "normalized_events.jsonl")
         sources_in_output = {r["source"] for r in records}
-        assert sources_in_output == {
-            "hospital_server", "ot_node", "domain_controller", "attacker"
-        }
+        assert sources_in_output == {"hospital_server", "ot_node", "domain_controller", "attacker"}
 
 
 # ===========================================================================
 # Integration: Schema contract validation
 # ===========================================================================
 
+
 class TestSchemaContract:
     """Verify every output event satisfies the canonical schema contract."""
 
-    def test_all_required_fields_present_in_every_output_event(
-        self, tmp_path: Path
-    ) -> None:
+    def test_all_required_fields_present_in_every_output_event(self, tmp_path: Path) -> None:
         h_file = tmp_path / "hospital.jsonl"
         ot_file = tmp_path / "ot.jsonl"
         write_jsonl(h_file, [make_hospital_raw()] * 20)
         write_jsonl(ot_file, [make_ot_raw()] * 10)
 
-        registry = _mock_registry(
-            ("hospital_server", h_file), ("ot_node", ot_file)
-        )
+        registry = _mock_registry(("hospital_server", h_file), ("ot_node", ot_file))
         out_dir = tmp_path / "normalized"
         NormalizationPipeline(registry, output_dir=out_dir).run()
 
@@ -185,9 +175,7 @@ class TestSchemaContract:
             missing = CANONICAL_REQUIRED_KEYS - record.keys()
             assert not missing, f"Record {i} missing fields: {missing}"
 
-    def test_normalizer_version_consistent_across_all_events(
-        self, tmp_path: Path
-    ) -> None:
+    def test_normalizer_version_consistent_across_all_events(self, tmp_path: Path) -> None:
         h_file = tmp_path / "hospital.jsonl"
         write_jsonl(h_file, [make_hospital_raw()] * 50)
 
@@ -270,6 +258,7 @@ class TestSchemaContract:
 # Integration: Ordering preservation
 # ===========================================================================
 
+
 class TestOrderingPreservation:
     """Verify within-source event ordering is preserved."""
 
@@ -304,20 +293,20 @@ class TestOrderingPreservation:
 # Integration: Error isolation
 # ===========================================================================
 
+
 class TestErrorIsolation:
     """Verify bad records do not stop the pipeline."""
 
-    def test_malformed_json_lines_skipped_good_events_written(
-        self, tmp_path: Path
-    ) -> None:
+    def test_malformed_json_lines_skipped_good_events_written(self, tmp_path: Path) -> None:
         h_file = tmp_path / "mixed.jsonl"
         lines = (
-            json.dumps(make_hospital_raw()) + "\n"
+            json.dumps(make_hospital_raw())
+            + "\n"
             + "NOT VALID JSON\n"
-            + json.dumps(make_hospital_raw({"pid": 9999})) + "\n"
+            + json.dumps(make_hospital_raw({"pid": 9999}))
+            + "\n"
         )
         h_file.write_text(lines, encoding="utf-8")
-
 
         registry = _mock_registry(("hospital_server", h_file))
         out_dir = tmp_path / "normalized"
@@ -327,9 +316,7 @@ class TestErrorIsolation:
         assert len(records) == 2
         assert report.total_events_normalized == 2
 
-    def test_missing_required_field_counts_as_parse_error(
-        self, tmp_path: Path
-    ) -> None:
+    def test_missing_required_field_counts_as_parse_error(self, tmp_path: Path) -> None:
         h_file = tmp_path / "bad.jsonl"
         bad_event = make_hospital_raw()
         del bad_event["timestamp"]
@@ -342,9 +329,7 @@ class TestErrorIsolation:
         assert report.total_events_normalized == 2
         assert report.total_parse_errors == 1
 
-    def test_one_missing_source_does_not_stop_others(
-        self, tmp_path: Path
-    ) -> None:
+    def test_one_missing_source_does_not_stop_others(self, tmp_path: Path) -> None:
         ot_file = tmp_path / "ot.jsonl"
         missing_file = tmp_path / "missing.jsonl"
         write_jsonl(ot_file, [make_ot_raw()] * 5)
@@ -371,9 +356,7 @@ class TestErrorIsolation:
             del bad["timestamp"]
             f.write(json.dumps(bad) + "\n")
 
-        registry = _mock_registry(
-            ("hospital_server", h_file), ("ot_node", ot_file)
-        )
+        registry = _mock_registry(("hospital_server", h_file), ("ot_node", ot_file))
         out_dir = tmp_path / "normalized"
         report = NormalizationPipeline(registry, output_dir=out_dir).run()
 
@@ -385,17 +368,15 @@ class TestErrorIsolation:
 # Integration: Statistics accuracy
 # ===========================================================================
 
-class TestStatisticsAccuracy:
 
+class TestStatisticsAccuracy:
     def test_per_source_stats_totals_match(self, tmp_path: Path) -> None:
         h_file = tmp_path / "hospital.jsonl"
         ot_file = tmp_path / "ot.jsonl"
         write_jsonl(h_file, [make_hospital_raw()] * 30)
         write_jsonl(ot_file, [make_ot_raw()] * 20)
 
-        registry = _mock_registry(
-            ("hospital_server", h_file), ("ot_node", ot_file)
-        )
+        registry = _mock_registry(("hospital_server", h_file), ("ot_node", ot_file))
         out_dir = tmp_path / "normalized"
         report = NormalizationPipeline(registry, output_dir=out_dir).run()
 
@@ -418,9 +399,7 @@ class TestStatisticsAccuracy:
         write_jsonl(h_file, [make_hospital_raw()])
 
         registry = _mock_registry(("hospital_server", h_file))
-        report = NormalizationPipeline(
-            registry, output_dir=tmp_path / "out"
-        ).run()
+        report = NormalizationPipeline(registry, output_dir=tmp_path / "out").run()
 
         assert report.duration_seconds is not None
         assert report.duration_seconds >= 0.0
@@ -435,9 +414,7 @@ class TestStatisticsAccuracy:
             ("hospital_server", h_file),
             ("domain_controller", dc_file),
         )
-        report = NormalizationPipeline(
-            registry, output_dir=tmp_path / "out"
-        ).run()
+        report = NormalizationPipeline(registry, output_dir=tmp_path / "out").run()
 
         assert "hospital_server" in report.sources_processed
         assert "domain_controller" in report.sources_processed

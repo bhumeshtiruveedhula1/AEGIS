@@ -85,28 +85,29 @@ from backend.normalization.exceptions import ParseError
 from backend.normalization.models import CanonicalEvent
 from backend.normalization.parsers import BaseParser
 
-
-_KNOWN_EVENT_TYPES = frozenset({
-    "UserLogon",
-    "UserLogonFailed",
-    "UserLogoff",
-    "PrivilegeAssigned",
-    "UserCreated",
-    "UserDeleted",
-    "GroupMembershipChanged",
-    "KerberosTicketRequest",
-    "AttackerHeartbeat",
-})
+_KNOWN_EVENT_TYPES = frozenset(
+    {
+        "UserLogon",
+        "UserLogonFailed",
+        "UserLogoff",
+        "PrivilegeAssigned",
+        "UserCreated",
+        "UserDeleted",
+        "GroupMembershipChanged",
+        "KerberosTicketRequest",
+        "AttackerHeartbeat",
+    }
+)
 
 # Windows logon type integers → human-readable strings
 _LOGON_TYPE_MAP: dict[int, str] = {
-    2:  "interactive",
-    3:  "network",
-    4:  "batch",
-    5:  "service",
-    7:  "unlock",
-    8:  "network_cleartext",
-    9:  "new_credentials",
+    2: "interactive",
+    3: "network",
+    4: "batch",
+    5: "service",
+    7: "unlock",
+    8: "network_cleartext",
+    9: "new_credentials",
     10: "remote_interactive",
     11: "cached_interactive",
 }
@@ -144,7 +145,17 @@ class DomainControllerParser(BaseParser):
         try:
             timestamp_raw = self._get_required(raw, "timestamp")
             event_type = self._get_required(raw, "event_type")
-            host = self._get_required(raw, "host")
+            # Digital twin data uses 'hostname'; canonical name is 'host'
+            host = raw.get("host") or raw.get("hostname") or ""
+            if not host:
+                from backend.normalization.exceptions import MissingFieldError
+
+                raise MissingFieldError(
+                    f"Required field 'host'/'hostname' is absent in raw record from source '{self.SOURCE}'.",
+                    source=self.SOURCE,
+                    raw_record=raw,
+                    field="host",
+                )
         except Exception as exc:
             raise ParseError(
                 str(exc),
@@ -181,10 +192,22 @@ class DomainControllerParser(BaseParser):
 
         # ── Extra fields ──────────────────────────────────────────────────
         known_keys = {
-            "event_id", "timestamp", "source", "event_type", "host",
-            "user", "resource", "action", "result", "raw_log",
-            "logon_type", "auth_package", "domain", "ip_address",
-            "dst_ip", "windows_event_id",
+            "event_id",
+            "timestamp",
+            "source",
+            "event_type",
+            "host",
+            "user",
+            "resource",
+            "action",
+            "result",
+            "raw_log",
+            "logon_type",
+            "auth_package",
+            "domain",
+            "ip_address",
+            "dst_ip",
+            "windows_event_id",
         }
         extra_fields = {k: v for k, v in raw.items() if k not in known_keys}
 
@@ -231,9 +254,7 @@ class DomainControllerParser(BaseParser):
             self._warn(warnings, f"Could not parse timestamp '{raw_ts}' — using now().")
             return datetime.now(UTC)
 
-    def _safe_int(
-        self, value: Any, field_name: str, warnings: list[str]
-    ) -> int | None:
+    def _safe_int(self, value: Any, field_name: str, warnings: list[str]) -> int | None:
         if value is None:
             return None
         try:
@@ -242,9 +263,7 @@ class DomainControllerParser(BaseParser):
             self._warn(warnings, f"'{field_name}' is not int: {value!r}")
             return None
 
-    def _normalise_logon_type(
-        self, value: Any, warnings: list[str]
-    ) -> str | None:
+    def _normalise_logon_type(self, value: Any, warnings: list[str]) -> str | None:
         """
         Normalise logon_type: accept int (Windows EID style) or string.
 

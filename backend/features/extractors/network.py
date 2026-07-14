@@ -27,6 +27,22 @@ Design notes
 - Except dst_ip_is_novel/src_ip_is_novel — these return 0.0 on cold-start
   since we have no baseline to compare against.
 - bytes_out_z_score uses safe_z_score; returns 0.0 when std=0.
+
+Cold-start novelty default — Architectural Decision (F02, Option A)
+--------------------------------------------------------------------
+All novelty features (dst_ip_is_novel, src_ip_is_novel, port_is_novel,
+protocol_is_novel) default to 0.0 when baseline is None.
+
+Rationale: novelty is defined as "not in the known set". Without a known
+set (baseline), the concept is undefined. Asserting 1.0 (novel) on cold-start
+would mean every cold-start event is flagged as having unknown IPs/ports —
+which inflates anomaly scores for entities that are simply new rather than
+malicious, and would contaminate IF training data if training occurs before
+a full baseline is established.
+
+The `baseline_presence` feature group carries the cold-start signal to the
+Isolation Forest via has_*_baseline features. The IF learns to interpret
+combinations of novelty=0.0 + has_baseline=0.0 as cold-start, not normal.
 """
 
 from __future__ import annotations
@@ -70,19 +86,22 @@ class NetworkExtractor(BaseExtractor):
 
     def extract(
         self,
-        event: "CanonicalEvent",
-        baseline: "EntityBaseline | None",
+        event: CanonicalEvent,
+        baseline: EntityBaseline | None,
     ) -> dict[str, float]:
         net: NetworkBaseline | None = None
         if baseline is not None:
             net = baseline.network
 
         # ── dst IP novelty ────────────────────────────────────────────────
+        # Cold-start default = 0.0 (not novel). See module docstring for the
+        # F02 architectural decision rationale.
         dst_novel = 0.0
         if net is not None and event.dst_ip is not None:
             dst_novel = binary(event.dst_ip not in net.unique_dst_ips)
 
         # ── src IP novelty ─────────────────────────────────────────────────
+        # Cold-start default = 0.0 (not novel) — same rationale as dst_novel.
         src_novel = 0.0
         if net is not None and event.src_ip is not None:
             src_novel = binary(event.src_ip not in net.unique_src_ips)
@@ -93,18 +112,14 @@ class NetworkExtractor(BaseExtractor):
         if net is not None and event.port is not None:
             port_key = str(event.port)
             port_novel = binary(port_key not in net.port_distribution)
-            port_freq = safe_frequency(
-                event.port, net.port_distribution, lower=False
-            )
+            port_freq = safe_frequency(event.port, net.port_distribution, lower=False)
 
         # ── Protocol novelty ───────────────────────────────────────────────
         proto_novel = 0.0
         proto_freq = 0.0
         if net is not None and event.protocol is not None:
             proto_novel = binary(
-                event.protocol.lower() not in {
-                    k.lower() for k in net.protocol_distribution
-                }
+                event.protocol.lower() not in {k.lower() for k in net.protocol_distribution}
             )
             proto_freq = safe_frequency(event.protocol, net.protocol_distribution)
 
@@ -113,12 +128,13 @@ class NetworkExtractor(BaseExtractor):
         bytes_pct = 0.0
         if net is not None and event.bytes_out is not None and net.bytes_out_stats is not None:
             stats = net.bytes_out_stats
-            bytes_z = safe_z_score(
-                float(event.bytes_out), stats.mean, stats.std
-            )
+            bytes_z = safe_z_score(float(event.bytes_out), stats.mean, stats.std)
             bytes_pct = safe_percentile_rank(
                 float(event.bytes_out),
-                stats.p25, stats.p50, stats.p75, stats.p95,
+                stats.p25,
+                stats.p50,
+                stats.p75,
+                stats.p95,
             )
 
         # ── Summary counts from baseline ───────────────────────────────────

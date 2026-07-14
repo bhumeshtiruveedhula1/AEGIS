@@ -25,6 +25,17 @@ Design notes
   process injection or staged execution.
 - All process features return 0.0 (not applicable) when event has no
   process field (OT/attacker events).
+
+Cold-start novelty default — Architectural Decision (F02, Option A)
+--------------------------------------------------------------------
+process_is_novel, parent_process_is_novel, parent_child_pair_is_novel
+all default to 0.0 when baseline is None.
+
+Rationale: novelty requires a known reference set. On cold-start, no
+process set exists to compare against, so novelty is undefined. Setting
+0.0 is the conservative choice; the `baseline_presence` feature group
+signals cold-start state to the Isolation Forest via has_*_baseline
+features, which the model uses as context when all novelty features are 0.
 """
 
 from __future__ import annotations
@@ -65,8 +76,8 @@ class ProcessExtractor(BaseExtractor):
 
     def extract(
         self,
-        event: "CanonicalEvent",
-        baseline: "EntityBaseline | None",
+        event: CanonicalEvent,
+        baseline: EntityBaseline | None,
     ) -> dict[str, float]:
         proc: ProcessBaseline | None = None
         if baseline is not None:

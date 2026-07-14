@@ -1,0 +1,464 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260714102246
+Username: BHUMESHJYOTHI\bhumeshjyothi
+RunAs User: BHUMESHJYOTHI\bhumeshjyothi
+Configuration Name:
+Machine: BHUMESHJYOTHI (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+Process ID: 19132
+PSVersion: 5.1.26100.8737
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8737
+BuildVersion: 10.0.26100.8737
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is session_log.txt
+PS C:\Users\bhumeshjyothi\Desktop\cyber-et\cybershield>
+(.venv) ls
+
+
+    Directory: C:\Users\bhumeshjyothi\Desktop\cyber-et\cybershield
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d-----        06-07-2026     18:27                .github
+d-----        08-07-2026     07:05                .mypy_cache
+d-----        06-07-2026     19:16                .pytest_cache
+d-----        08-07-2026     06:48                .ruff_cache
+d-----        07-07-2026     21:46                .venv
+d-----        08-07-2026     16:03                backend
+d-----        10-07-2026     20:51                cybershield.egg-info
+d-----        09-07-2026     22:01                data
+d-----        07-07-2026     18:34                docker
+d-----        08-07-2026     22:15                docs
+d-----        06-07-2026     18:27                models
+d-----        07-07-2026     17:09                reports
+d-----        09-07-2026     21:44                scripts
+d-----        06-07-2026     19:12                tests
+-a----        14-07-2026     10:13         237568 .coverage
+-a----        06-07-2026     18:08            478 .editorconfig
+-a----        10-07-2026     08:54           6228 .env
+-a----        08-07-2026     22:15           6293 .env.example
+-a----        06-07-2026     18:08           3433 .gitignore
+-a----        06-07-2026     18:09           2455 .pre-commit-config.yaml
+-a----        08-07-2026     08:31           6907 .secrets.baseline
+-a----        06-07-2026     18:09           6774 Makefile
+-a----        08-07-2026     22:15           5525 pyproject.toml
+-a----        06-07-2026     18:25           5642 README.md
+-a----        06-07-2026     18:08           1087 requirements-dev.txt
+-a----        06-07-2026     18:07            819 requirements.txt
+-a----        14-07-2026     10:22              0 session_log.txt
+-a----        08-07-2026     08:31          11994 verify_environment.py
+
+
+PS C:\Users\bhumeshjyothi\Desktop\cyber-et\cybershield>
+PS C:\Users\bhumeshjyothi\Desktop\cyber-et\cybershield>
+(.venv) Invoke-Item .\session_log.txt
+
+PS C:\Users\bhumeshjyothi\Desktop\cyber-et\cybershield>
+(.venv) python -m pytest tests/ --no-cov -q -p no:cacheprovider
+humeshjyothi\pytest-1\test_run_error_events_written_0\out\error_events.jsonl output_file=C:\Users\bhumeshjyothi\AppData\Local\Temp\pyte
+st-of-bhumeshjyothi\pytest-1\test_run_error_events_written_0\out\normalized_events.jsonl run_id=6407199e-5554-41b1-b4e3-b293a54a1693 se
+verity=INFO
+2026-07-14T04:54:02.979517Z [debug    ] normalized_writer_opened       mode=w path=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-
+bhumeshjyothi\pytest-1\test_run_error_events_written_0\out\normalized_events.jsonl severity=DEBUG
+2026-07-14T04:54:02.979517Z [debug    ] normalized_writer_opened       mode=w path=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-
+bhumeshjyothi\pytest-1\test_run_error_events_written_0\out\error_events.jsonl severity=DEBUG
+2026-07-14T04:54:02.979517Z [info     ] telemetry_collector_reading_source path=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-bhu
+meshjyothi\pytest-1\test_run_error_events_written_0\mixed.jsonl severity=INFO source=<MagicMock name='mock.container_role' id='22520503
+61872'>
+2026-07-14T04:54:02.980528Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050361872'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_error_events_written_0\mixed.jsonl line_number=1 severity=WARN
+ING source=<MagicMock name='mock.container_role' id='2252050361872'>
+2026-07-14T04:54:02.980528Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050361872'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_error_events_written_0\mixed.jsonl line_number=2 severity=WARN
+ING source=<MagicMock name='mock.container_role' id='2252050361872'>
+2026-07-14T04:54:02.980528Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050361872'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_error_events_written_0\mixed.jsonl line_number=3 severity=WARN
+ING source=<MagicMock name='mock.container_role' id='2252050361872'>
+2026-07-14T04:54:02.980528Z [info     ] telemetry_source_complete      lines_read=3 severity=INFO source=<MagicMock name='mock.containe
+r_role' id='2252050361872'>
+2026-07-14T04:54:02.980528Z [debug    ] normalized_writer_closed       events_written=3 path=C:\Users\bhumeshjyothi\AppData\Local\Temp\
+pytest-of-bhumeshjyothi\pytest-1\test_run_error_events_written_0\out\error_events.jsonl severity=DEBUG
+2026-07-14T04:54:02.980528Z [debug    ] normalized_writer_closed       events_written=0 path=C:\Users\bhumeshjyothi\AppData\Local\Temp\
+pytest-of-bhumeshjyothi\pytest-1\test_run_error_events_written_0\out\normalized_events.jsonl severity=DEBUG
+2026-07-14T04:54:02.980528Z [info     ] normalization_pipeline_completed duration_s=0.001011 run_id=6407199e-5554-41b1-b4e3-b293a54a169
+3 severity=INFO total_errors=3 total_normalized=0
+________________________________________ TestRunPipeline.test_run_per_source_stats_populated _________________________________________
+
+self = <tests.unit.normalization.test_pipeline.TestRunPipeline object at 0x0000020C56DE4C90>
+tmp_path = WindowsPath('C:/Users/bhumeshjyothi/AppData/Local/Temp/pytest-of-bhumeshjyothi/pytest-1/test_run_per_source_stats_popu0')
+
+    def test_run_per_source_stats_populated(self, tmp_path: Path) -> None:
+        h_file = tmp_path / "hospital.jsonl"
+        ot_file = tmp_path / "ot.jsonl"
+        write_jsonl(h_file, [make_hospital_raw()] * 10)
+        write_jsonl(ot_file, [make_ot_raw()] * 5)
+
+        registry = _mock_registry(
+            ("hospital_server", h_file),
+            ("ot_node", ot_file),
+        )
+        report = NormalizationPipeline(
+            registry, output_dir=tmp_path / "out"
+        ).run()
+
+        assert len(report.per_source_stats) == 2
+        sources = {s.source for s in report.per_source_stats}
+>       assert "hospital_server" in sources
+E       assert 'hospital_server' in {"<MagicMock name='mock.container_role' id='2252050254992'>", "<MagicMock name='mock.container_role
+' id='2252050339472'>"}
+
+tests\unit\normalization\test_pipeline.py:257: AssertionError
+-------------------------------------------------------- Captured stdout call --------------------------------------------------------
+2026-07-14T04:54:02.997154Z [info     ] normalization_pipeline_started error_file=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-b
+humeshjyothi\pytest-1\test_run_per_source_stats_popu0\out\error_events.jsonl output_file=C:\Users\bhumeshjyothi\AppData\Local\Temp\pyte
+st-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\out\normalized_events.jsonl run_id=73f4cb54-bb7c-4bf2-9587-a084eb92df71 se
+verity=INFO
+2026-07-14T04:54:02.998250Z [debug    ] normalized_writer_opened       mode=w path=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-
+bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\out\normalized_events.jsonl severity=DEBUG
+2026-07-14T04:54:02.998250Z [debug    ] normalized_writer_opened       mode=w path=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-
+bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\out\error_events.jsonl severity=DEBUG
+2026-07-14T04:54:02.998250Z [info     ] telemetry_collector_reading_source path=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-bhu
+meshjyothi\pytest-1\test_run_per_source_stats_popu0\hospital.jsonl severity=INFO source=<MagicMock name='mock.container_role' id='22520
+50339472'>
+2026-07-14T04:54:02.998250Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050339472'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\hospital.jsonl line_number=1 severity=W
+ARNING source=<MagicMock name='mock.container_role' id='2252050339472'>
+2026-07-14T04:54:02.998250Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050339472'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\hospital.jsonl line_number=2 severity=W
+ARNING source=<MagicMock name='mock.container_role' id='2252050339472'>
+2026-07-14T04:54:02.998250Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050339472'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\hospital.jsonl line_number=3 severity=W
+ARNING source=<MagicMock name='mock.container_role' id='2252050339472'>
+2026-07-14T04:54:02.998250Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050339472'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\hospital.jsonl line_number=4 severity=W
+ARNING source=<MagicMock name='mock.container_role' id='2252050339472'>
+2026-07-14T04:54:02.999245Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050339472'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\hospital.jsonl line_number=5 severity=W
+ARNING source=<MagicMock name='mock.container_role' id='2252050339472'>
+2026-07-14T04:54:02.999245Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050339472'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\hospital.jsonl line_number=6 severity=W
+ARNING source=<MagicMock name='mock.container_role' id='2252050339472'>
+2026-07-14T04:54:02.999245Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050339472'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\hospital.jsonl line_number=7 severity=W
+ARNING source=<MagicMock name='mock.container_role' id='2252050339472'>
+2026-07-14T04:54:02.999245Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050339472'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\hospital.jsonl line_number=8 severity=W
+ARNING source=<MagicMock name='mock.container_role' id='2252050339472'>
+2026-07-14T04:54:02.999245Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050339472'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\hospital.jsonl line_number=9 severity=W
+ARNING source=<MagicMock name='mock.container_role' id='2252050339472'>
+2026-07-14T04:54:02.999245Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050339472'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\hospital.jsonl line_number=10 severity=
+WARNING source=<MagicMock name='mock.container_role' id='2252050339472'>
+2026-07-14T04:54:02.999245Z [info     ] telemetry_source_complete      lines_read=10 severity=INFO source=<MagicMock name='mock.contain
+er_role' id='2252050339472'>
+2026-07-14T04:54:02.999245Z [info     ] telemetry_collector_reading_source path=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-bhu
+meshjyothi\pytest-1\test_run_per_source_stats_popu0\ot.jsonl severity=INFO source=<MagicMock name='mock.container_role' id='22520502549
+92'>
+2026-07-14T04:54:02.999245Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050254992'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\ot.jsonl line_number=1 severity=WARNING
+ source=<MagicMock name='mock.container_role' id='2252050254992'>
+2026-07-14T04:54:02.999245Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050254992'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\ot.jsonl line_number=2 severity=WARNING
+ source=<MagicMock name='mock.container_role' id='2252050254992'>
+2026-07-14T04:54:02.999245Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050254992'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\ot.jsonl line_number=3 severity=WARNING
+ source=<MagicMock name='mock.container_role' id='2252050254992'>
+2026-07-14T04:54:02.999245Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050254992'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\ot.jsonl line_number=4 severity=WARNING
+ source=<MagicMock name='mock.container_role' id='2252050254992'>
+2026-07-14T04:54:02.999245Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050254992'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\ot.jsonl line_number=5 severity=WARNING
+ source=<MagicMock name='mock.container_role' id='2252050254992'>
+2026-07-14T04:54:02.999245Z [info     ] telemetry_source_complete      lines_read=5 severity=INFO source=<MagicMock name='mock.containe
+r_role' id='2252050254992'>
+2026-07-14T04:54:02.999245Z [debug    ] normalized_writer_closed       events_written=15 path=C:\Users\bhumeshjyothi\AppData\Local\Temp
+\pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\out\error_events.jsonl severity=DEBUG
+2026-07-14T04:54:03.000267Z [debug    ] normalized_writer_closed       events_written=0 path=C:\Users\bhumeshjyothi\AppData\Local\Temp\
+pytest-of-bhumeshjyothi\pytest-1\test_run_per_source_stats_popu0\out\normalized_events.jsonl severity=DEBUG
+2026-07-14T04:54:03.000267Z [info     ] normalization_pipeline_completed duration_s=0.003113 run_id=73f4cb54-bb7c-4bf2-9587-a084eb92df7
+1 severity=INFO total_errors=15 total_normalized=0
+_________________________________________ TestRunPipeline.test_run_last_report_attribute_set _________________________________________
+
+self = <tests.unit.normalization.test_pipeline.TestRunPipeline object at 0x0000020C56DE50D0>
+tmp_path = WindowsPath('C:/Users/bhumeshjyothi/AppData/Local/Temp/pytest-of-bhumeshjyothi/pytest-1/test_run_last_report_attribute0')
+
+    def test_run_last_report_attribute_set(self, tmp_path: Path) -> None:
+        log_file = tmp_path / "hospital.jsonl"
+        write_jsonl(log_file, [make_hospital_raw()])
+
+        registry = _mock_registry(("hospital_server", log_file))
+        pipeline = NormalizationPipeline(registry, output_dir=tmp_path / "out")
+        pipeline.run()
+
+        assert pipeline.last_report is not None
+>       assert pipeline.last_report.total_events_normalized == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = ParseReport(run_id='b0665366-ee2e-4584-a651-0eec19495b26', started_at=datetime.datetime(2026, 7, 14, 4, 54, 3, 75
+92, t...hi\\AppData\\Local\\Temp\\pytest-of-bhumeshjyothi\\pytest-1\\test_run_last_report_attribute0\\out\\error_events.jsonl').total_e
+vents_normalized
+E        +    where ParseReport(run_id='b0665366-ee2e-4584-a651-0eec19495b26', started_at=datetime.datetime(2026, 7, 14, 4, 54, 3, 7592
+, t...hi\\AppData\\Local\\Temp\\pytest-of-bhumeshjyothi\\pytest-1\\test_run_last_report_attribute0\\out\\error_events.jsonl') = <backen
+d.normalization.pipeline.NormalizationPipeline object at 0x0000020C583239D0>.last_report
+
+tests\unit\normalization\test_pipeline.py:269: AssertionError
+-------------------------------------------------------- Captured stdout call --------------------------------------------------------
+2026-07-14T04:54:03.007592Z [info     ] normalization_pipeline_started error_file=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-b
+humeshjyothi\pytest-1\test_run_last_report_attribute0\out\error_events.jsonl output_file=C:\Users\bhumeshjyothi\AppData\Local\Temp\pyte
+st-of-bhumeshjyothi\pytest-1\test_run_last_report_attribute0\out\normalized_events.jsonl run_id=b0665366-ee2e-4584-a651-0eec19495b26 se
+verity=INFO
+2026-07-14T04:54:03.007592Z [debug    ] normalized_writer_opened       mode=w path=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-
+bhumeshjyothi\pytest-1\test_run_last_report_attribute0\out\normalized_events.jsonl severity=DEBUG
+2026-07-14T04:54:03.007592Z [debug    ] normalized_writer_opened       mode=w path=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-
+bhumeshjyothi\pytest-1\test_run_last_report_attribute0\out\error_events.jsonl severity=DEBUG
+2026-07-14T04:54:03.007592Z [info     ] telemetry_collector_reading_source path=C:\Users\bhumeshjyothi\AppData\Local\Temp\pytest-of-bhu
+meshjyothi\pytest-1\test_run_last_report_attribute0\hospital.jsonl severity=INFO source=<MagicMock name='mock.container_role' id='22520
+50117840'>
+2026-07-14T04:54:03.008587Z [warning  ] normalization_no_parser        error=No parser registered for source '<MagicMock name='mock.con
+tainer_role' id='2252050117840'>'. Registered sources: ['attacker', 'domain_controller', 'hospital_server', 'ot_node'] file=C:\Users\bh
+umeshjyothi\AppData\Local\Temp\pytest-of-bhumeshjyothi\pytest-1\test_run_last_report_attribute0\hospital.jsonl line_number=1 severity=W
+ARNING source=<MagicMock name='mock.container_role' id='2252050117840'>
+2026-07-14T04:54:03.008587Z [info     ] telemetry_source_complete      lines_read=1 severity=INFO source=<MagicMock name='mock.containe
+r_role' id='2252050117840'>
+2026-07-14T04:54:03.008587Z [debug    ] normalized_writer_closed       events_written=1 path=C:\Users\bhumeshjyothi\AppData\Local\Temp\
+pytest-of-bhumeshjyothi\pytest-1\test_run_last_report_attribute0\out\error_events.jsonl severity=DEBUG
+2026-07-14T04:54:03.008587Z [debug    ] normalized_writer_closed       events_written=0 path=C:\Users\bhumeshjyothi\AppData\Local\Temp\
+pytest-of-bhumeshjyothi\pytest-1\test_run_last_report_attribute0\out\normalized_events.jsonl severity=DEBUG
+2026-07-14T04:54:03.008587Z [info     ] normalization_pipeline_completed duration_s=0.000995 run_id=b0665366-ee2e-4584-a651-0eec19495b2
+6 severity=INFO total_errors=1 total_normalized=0
+====================================================== short test summary info =======================================================
+FAILED tests/integration/test_metrics_pipeline.py::TestFullMetricsPipeline::test_full_pipeline_produces_snapshot - AssertionError: asse
+rt 57.0 == 56.0
+FAILED tests/integration/test_normalization_pipeline.py::TestFullPipeline::test_four_source_pipeline_produces_correct_event_count - Ass
+ertionError: assert 0 == 105
+FAILED tests/integration/test_normalization_pipeline.py::TestFullPipeline::test_output_jsonl_has_correct_line_count - assert 0 == 100
+FAILED tests/integration/test_normalization_pipeline.py::TestFullPipeline::test_all_sources_represented_in_output - AssertionError: ass
+ert set() == {'attacker', ...r', 'ot_node'}
+FAILED tests/integration/test_normalization_pipeline.py::TestSchemaContract::test_normalizer_version_consistent_across_all_events - Ass
+ertionError: assert set() == {'1.0.0'}
+FAILED tests/integration/test_normalization_pipeline.py::TestSchemaContract::test_hosts_are_lowercased_in_output - IndexError: list ind
+ex out of range
+FAILED tests/integration/test_normalization_pipeline.py::TestSchemaContract::test_ot_events_have_modbus_fields - IndexError: list index
+ out of range
+FAILED tests/integration/test_normalization_pipeline.py::TestSchemaContract::test_dc_events_have_auth_fields - IndexError: list index o
+ut of range
+FAILED tests/integration/test_normalization_pipeline.py::TestSchemaContract::test_hospital_events_have_process_fields - IndexError: lis
+t index out of range
+FAILED tests/integration/test_normalization_pipeline.py::TestOrderingPreservation::test_hospital_events_ordered_by_input_order - assert
+ [] == [0, 1, 2, 3, 4, 5, ...]
+FAILED tests/integration/test_normalization_pipeline.py::TestOrderingPreservation::test_ot_events_maintain_register_sequence - assert [
+] == [10, 11, 12, 13, 14, 15, ...]
+FAILED tests/integration/test_normalization_pipeline.py::TestErrorIsolation::test_malformed_json_lines_skipped_good_events_written - as
+sert 0 == 2
+FAILED tests/integration/test_normalization_pipeline.py::TestErrorIsolation::test_missing_required_field_counts_as_parse_error - Assert
+ionError: assert 0 == 2
+FAILED tests/integration/test_normalization_pipeline.py::TestErrorIsolation::test_one_missing_source_does_not_stop_others - AssertionEr
+ror: assert 0 == 5
+FAILED tests/integration/test_normalization_pipeline.py::TestErrorIsolation::test_mixed_good_and_bad_across_sources - AssertionError: a
+ssert 0 == 15
+FAILED tests/integration/test_normalization_pipeline.py::TestStatisticsAccuracy::test_per_source_stats_totals_match - KeyError: 'hospit
+al_server'
+FAILED tests/integration/test_normalization_pipeline.py::TestStatisticsAccuracy::test_overall_error_rate_zero_for_clean_data - Assertio
+nError: assert 1.0 == 0.0
+FAILED tests/integration/test_normalization_pipeline.py::TestStatisticsAccuracy::test_sources_processed_matches_input_sources - assert
+'hospital_server' in ["<MagicMock name='mock.container_role' id='2252043490320'>", "<MagicMock name='mock.container_role' i...
+FAILED tests/unit/detection/test_service.py::TestDetectionServiceTraining::test_train_returns_training_result - sklearn.utils._param_va
+lidation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_service.py::TestDetectionServiceTraining::test_model_loaded_after_training - sklearn.utils._param_vali
+dation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_service.py::TestDetectionServiceTraining::test_model_id_set_after_training - sklearn.utils._param_vali
+dation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_service.py::TestDetectionServiceTraining::test_model_paths_set_in_result - sklearn.utils._param_valida
+tion.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_service.py::TestDetectionServiceTraining::test_incremental_retrain_increases_model_count - sklearn.uti
+ls._param_validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_service.py::TestDetectionServiceTraining::test_retrain_uses_passed_existing_records - sklearn.utils._p
+aram_validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_service.py::TestDetectionServiceInference::test_list_available_models_after_two_trains - sklearn.utils
+._param_validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_train_returns_triple - sklearn.utils._param_validation.In
+validParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_metadata_feature_dimension_correct - sklearn.utils._param
+_validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_training_result_sample_count - sklearn.utils._param_valid
+ation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_custom_model_id - sklearn.utils._param_validation.Invalid
+ParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_entity_dim_filter - sklearn.utils._param_validation.Inval
+idParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_reproducibility - sklearn.utils._param_validation.Invalid
+ParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_pipeline_preprocessor_is_fitted - sklearn.utils._param_va
+lidation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_n_estimators_passed_to_if - sklearn.utils._param_validati
+on.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_training_duration_positive - sklearn.utils._param_validat
+ion.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_retrain_combines_records - sklearn.utils._param_validatio
+n.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_notes_stored_in_metadata - sklearn.utils._param_validatio
+n.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/detection/test_trainer.py::TestIsolationForestTrainer::test_entity_count_in_result - sklearn.utils._param_validation.
+InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+FAILED tests/unit/features/test_models.py::TestSchemaConstants::test_feature_dimension_is_56 - assert 57 == 56
+FAILED tests/unit/features/test_pipeline.py::TestFeaturePipelineDeterminism::test_feature_vector_length_56 - AssertionError: assert 57
+== 56
+FAILED tests/unit/metrics/test_collectors.py::TestFeatureCollector::test_schema_constants_always_computed - AssertionError: assert 57.0
+ == 56.0
+FAILED tests/unit/normalization/test_collector.py::TestStreamRecords::test_source_name_set_correctly - assert "<MagicMock n...520426665
+12'>" == 'hospital_server'
+FAILED tests/unit/normalization/test_pipeline.py::TestStreamNormalized::test_stream_normalized_yields_canonical_events - assert 0 == 10
+FAILED tests/unit/normalization/test_pipeline.py::TestStreamNormalized::test_stream_normalized_skips_errors - assert 0 == 3
+FAILED tests/unit/normalization/test_pipeline.py::TestStreamNormalized::test_stream_normalized_multi_source - assert 0 == 8
+FAILED tests/unit/normalization/test_pipeline.py::TestRunPipeline::test_run_returns_parse_report - AssertionError: assert 0 == 5
+FAILED tests/unit/normalization/test_pipeline.py::TestRunPipeline::test_run_writes_output_jsonl - assert 0 == 3
+FAILED tests/unit/normalization/test_pipeline.py::TestRunPipeline::test_run_error_events_written_to_error_file - AssertionError: assert
+ 0 == 2
+FAILED tests/unit/normalization/test_pipeline.py::TestRunPipeline::test_run_per_source_stats_populated - assert 'hospital_server' in {"
+<MagicMock name='mock.container_role' id='2252050254992'>", "<MagicMock name='mock.container_role' i...
+FAILED tests/unit/normalization/test_pipeline.py::TestRunPipeline::test_run_last_report_attribute_set - AssertionError: assert 0 == 1
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_score_single_normal_returns_none_or_alert - sklearn.utils._param_val
+idation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_score_single_alert_has_required_fields - sklearn.utils._param_valida
+tion.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_score_single_score_in_range - sklearn.utils._param_validation.Invali
+dParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_score_batch_returns_detection_result - sklearn.utils._param_validati
+on.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_score_batch_empty_entity_dim - sklearn.utils._param_validation.Inval
+idParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_score_batch_alert_count_consistent - sklearn.utils._param_validation
+.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_score_stream_yields_only_alerts - sklearn.utils._param_validation.In
+validParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_score_stream_filters_wrong_entity_dim - sklearn.utils._param_validat
+ion.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_scorer_model_id_property - sklearn.utils._param_validation.InvalidPa
+rameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_scorer_threshold_property - sklearn.utils._param_validation.InvalidP
+arameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_scorer_entity_dimension_property - sklearn.utils._param_validation.I
+nvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_raw_feature_values_in_alert - sklearn.utils._param_validation.Invali
+dParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_scorer.py::TestAnomalyScorer::test_score_batch_with_errors_still_completes - sklearn.utils._param_valid
+ation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_service.py::TestDetectionServiceTraining::test_get_status_after_training - sklearn.utils._param_validat
+ion.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_service.py::TestDetectionServiceInference::test_score_event_returns_none_or_alert - sklearn.utils._para
+m_validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_service.py::TestDetectionServiceInference::test_score_event_alert_has_model_id - sklearn.utils._param_v
+alidation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_service.py::TestDetectionServiceInference::test_score_batch_returns_detection_result - sklearn.utils._p
+aram_validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_service.py::TestDetectionServiceInference::test_score_stream_yields_alerts - sklearn.utils._param_valid
+ation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/detection/test_service.py::TestDetectionServiceInference::test_reload_model_after_training - sklearn.utils._param_vali
+dation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestSHAPExplainerInit::test_init_success - sklearn.utils._param_validation.InvalidPa
+rameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestSHAPExplainerInit::test_feature_names_match_canonical - sklearn.utils._param_val
+idation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestSHAPExplainerInit::test_expected_value_is_finite - sklearn.utils._param_validati
+on.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_explain_alert_returns_result - sklearn.utils._param_validatio
+n.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_explanation_id_starts_with_expl - sklearn.utils._param_valida
+tion.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_alert_id_preserved - sklearn.utils._param_validation.InvalidP
+arameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_model_id_preserved - sklearn.utils._param_validation.InvalidP
+arameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_correct_number_of_contributions - sklearn.utils._param_valida
+tion.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_contributions_sorted_by_rank - sklearn.utils._param_validatio
+n.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_top_features_count - sklearn.utils._param_validation.InvalidP
+arameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_top_features_are_feature_names - sklearn.utils._param_validat
+ion.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_anomaly_score_copied - sklearn.utils._param_validation.Invali
+dParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_total_abs_shap_non_negative - sklearn.utils._param_validation
+.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_all_shap_values_finite - sklearn.utils._param_validation.Inva
+lidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_contribution_pcts_sum_to_100_or_zero - sklearn.utils._param_v
+alidation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_wrong_model_id_raises - sklearn.utils._param_validation.Inval
+idParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_reproducible_shap_values - sklearn.utils._param_validation.In
+validParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainAlert::test_raw_feature_values_match_record - sklearn.utils._param_valida
+tion.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainBatch::test_batch_returns_list - sklearn.utils._param_validation.InvalidP
+arameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainBatch::test_batch_empty_returns_empty - sklearn.utils._param_validation.I
+nvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainBatch::test_batch_mismatched_lengths_raises - sklearn.utils._param_valida
+tion.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainBatch::test_batch_results_in_order - sklearn.utils._param_validation.Inva
+lidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_explainer.py::TestExplainBatch::test_batch_explanation_ids_unique - sklearn.utils._param_validatio
+n.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainabilityServiceInit::test_initialized_after_init - sklearn.utils._param_vali
+dation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainabilityServiceInit::test_model_id_set_after_init - sklearn.utils._param_val
+idation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainabilityServiceInit::test_explain_before_init_raises - sklearn.utils._param_
+validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainabilityServiceInit::test_get_status_after_init - sklearn.utils._param_valid
+ation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainAlertService::test_explain_alert_returns_result - sklearn.utils._param_vali
+dation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainAlertService::test_explanation_has_correct_alert_id - sklearn.utils._param_
+validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainAlertService::test_explanation_top_n_features - sklearn.utils._param_valida
+tion.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainAlertService::test_explain_alert_with_persist_saves_to_store - sklearn.util
+s._param_validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainBatchService::test_explain_alerts_batch_returns_list - sklearn.utils._param
+_validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainBatchService::test_explain_detection_result_returns_report - sklearn.utils.
+_param_validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainBatchService::test_explain_detection_result_empty_alerts - sklearn.utils._p
+aram_validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainBatchService::test_explain_detection_result_unmatched_records_counted_as_er
+rors - sklearn.utils._param_validation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'i
+nt...
+ERROR tests/unit/explainability/test_service.py::TestExplainBatchService::test_report_has_aggregates - sklearn.utils._param_validation.
+InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainStreamService::test_explain_stream_yields_results - sklearn.utils._param_va
+lidation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+ERROR tests/unit/explainability/test_service.py::TestExplainStreamService::test_explain_stream_empty_input - sklearn.utils._param_valid
+ation.InvalidParameterError: The 'max_features' parameter of IsolationForest must be an instance of 'int...
+============================================ 49 failed, 1436 passed, 57 errors in 11.54s =============================================
+PS C:\Users\bhumeshjyothi\Desktop\cyber-et\cybershield>
+(.venv) Invoke-Item .\session_log.txt
+
+PS C:\Users\bhumeshjyothi\Desktop\cyber-et\cybershield>

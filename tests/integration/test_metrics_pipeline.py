@@ -30,17 +30,16 @@ from backend.metrics.models import (
     MetricRecord,
 )
 from backend.metrics.service import MetricService
-
 from tests.unit.metrics.conftest import (
     make_baseline_profile,
     make_feature_pipeline_report,
     make_mock_norm_report,
 )
 
-
 # ===========================================================================
 # Full pipeline: real data → snapshot → disk → query
 # ===========================================================================
+
 
 class TestFullMetricsPipeline:
     """End-to-end test: real data → MetricSnapshot → JSONL → MetricReader."""
@@ -73,7 +72,7 @@ class TestFullMetricsPipeline:
 
         # Feature domain
         assert snap.feature.feature_schema_version.is_computed
-        assert snap.feature.feature_dimension.safe_float() == 56.0
+        assert snap.feature.feature_dimension.safe_float() == 57.0  # auth_unexpected_failure added
         assert snap.feature.total_feature_records.is_computed
 
         # Detection domain — always UNAVAILABLE
@@ -81,7 +80,10 @@ class TestFullMetricsPipeline:
         assert snap.detection.false_positive_rate.availability == MetricAvailability.UNAVAILABLE
 
         # Response domain — always UNAVAILABLE
-        assert snap.response.mean_time_to_respond_seconds.availability == MetricAvailability.UNAVAILABLE
+        assert (
+            snap.response.mean_time_to_respond_seconds.availability
+            == MetricAvailability.UNAVAILABLE
+        )
 
         # Health domain
         assert snap.health.metrics_schema_version.is_computed
@@ -142,8 +144,8 @@ class TestFullMetricsPipeline:
 # Multi-run: trend and comparison
 # ===========================================================================
 
-class TestMultiRunAnalysis:
 
+class TestMultiRunAnalysis:
     def test_trend_shows_increasing_events(self, tmp_path: Path) -> None:
         service = MetricService(store_dir=tmp_path)
         for count in [1000, 2000, 3000]:
@@ -189,8 +191,8 @@ class TestMultiRunAnalysis:
 # Platform status
 # ===========================================================================
 
-class TestPlatformStatus:
 
+class TestPlatformStatus:
     def test_status_no_data_before_collection(self, tmp_path: Path) -> None:
         service = MetricService(store_dir=tmp_path)
         status = service.get_platform_status()
@@ -218,8 +220,8 @@ class TestPlatformStatus:
 # Edge cases
 # ===========================================================================
 
-class TestEdgeCases:
 
+class TestEdgeCases:
     def test_empty_collect_all_no_crash(self, tmp_path: Path) -> None:
         """collect_all with zero data must not raise."""
         service = MetricService(store_dir=tmp_path)
@@ -248,16 +250,21 @@ class TestEdgeCases:
     def test_metric_availability_honesty(self, tmp_path: Path) -> None:
         """Verify no COMPUTED metrics appear with None value."""
         from backend.metrics.models import MetricValue as MV
+
         service = MetricService(store_dir=tmp_path)
         snap = service.collect_all()
-        for domain_obj in [snap.pipeline, snap.baseline, snap.feature,
-                           snap.detection, snap.response]:
+        for domain_obj in [
+            snap.pipeline,
+            snap.baseline,
+            snap.feature,
+            snap.detection,
+            snap.response,
+        ]:
             for field_name in type(domain_obj).model_fields:
                 val = getattr(domain_obj, field_name)
                 if isinstance(val, MV):
                     if val.availability == MetricAvailability.COMPUTED:
                         # COMPUTED must always have a non-None value
-                        assert val.value is not None, (
-                            f"{type(domain_obj).__name__}.{field_name} is COMPUTED but value=None"
-                        )
-
+                        assert (
+                            val.value is not None
+                        ), f"{type(domain_obj).__name__}.{field_name} is COMPUTED but value=None"

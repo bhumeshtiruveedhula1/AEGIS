@@ -109,19 +109,20 @@ from backend.normalization.exceptions import ParseError
 from backend.normalization.models import CanonicalEvent
 from backend.normalization.parsers import BaseParser
 
-
 # Event types this source can produce
-_KNOWN_EVENT_TYPES = frozenset({
-    "ProcessCreate",
-    "ProcessTerminate",
-    "NetworkConnect",
-    "NetworkDisconnect",
-    "FileAccess",
-    "FileCreate",
-    "DatabaseQuery",
-    "UserLogon",
-    "AttackerHeartbeat",  # also possible when attacker pings hospital
-})
+_KNOWN_EVENT_TYPES = frozenset(
+    {
+        "ProcessCreate",
+        "ProcessTerminate",
+        "NetworkConnect",
+        "NetworkDisconnect",
+        "FileAccess",
+        "FileCreate",
+        "DatabaseQuery",
+        "UserLogon",
+        "AttackerHeartbeat",  # also possible when attacker pings hospital
+    }
+)
 
 
 class HospitalServerParser(BaseParser):
@@ -156,7 +157,17 @@ class HospitalServerParser(BaseParser):
         try:
             timestamp_raw = self._get_required(raw, "timestamp")
             event_type = self._get_required(raw, "event_type")
-            host = self._get_required(raw, "host")
+            # Digital twin data uses 'hostname'; canonical name is 'host'
+            host = raw.get("host") or raw.get("hostname") or ""
+            if not host:
+                from backend.normalization.exceptions import MissingFieldError
+
+                raise MissingFieldError(
+                    f"Required field 'host'/'hostname' is absent in raw record from source '{self.SOURCE}'.",
+                    source=self.SOURCE,
+                    raw_record=raw,
+                    field="host",
+                )
         except Exception as exc:
             raise ParseError(
                 str(exc),
@@ -211,11 +222,29 @@ class HospitalServerParser(BaseParser):
 
         # ── Collect unrecognised keys as extra_fields ─────────────────────
         known_keys = {
-            "event_id", "timestamp", "source", "event_type", "host",
-            "user", "resource", "action", "result", "raw_log",
-            "process_name", "pid", "parent_process", "command_line",
-            "src_ip", "dst_ip", "dst_port", "protocol", "bytes_sent",
-            "file_path", "query_type", "table_name", "windows_event_id",
+            "event_id",
+            "timestamp",
+            "source",
+            "event_type",
+            "host",
+            "user",
+            "resource",
+            "action",
+            "result",
+            "raw_log",
+            "process_name",
+            "pid",
+            "parent_process",
+            "command_line",
+            "src_ip",
+            "dst_ip",
+            "dst_port",
+            "protocol",
+            "bytes_sent",
+            "file_path",
+            "query_type",
+            "table_name",
+            "windows_event_id",
         }
         extra_fields = {k: v for k, v in raw.items() if k not in known_keys}
 

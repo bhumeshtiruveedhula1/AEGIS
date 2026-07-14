@@ -48,7 +48,7 @@ from typing import TYPE_CHECKING
 
 import structlog
 
-from backend.normalization.exceptions import ParseError, SourceError
+from backend.normalization.exceptions import SourceError
 from backend.normalization.models import RawRecord
 
 if TYPE_CHECKING:
@@ -85,7 +85,7 @@ class TelemetryCollector:
 
     def __init__(
         self,
-        registry: "DigitalTwinRegistry",
+        registry: DigitalTwinRegistry,
         *,
         max_lines_per_source: int = 0,
     ) -> None:
@@ -110,8 +110,12 @@ class TelemetryCollector:
             return
 
         for source in sources:
-            source_name = str(source.role)  # ContainerRole is a StrEnum
-            log_path = source.host_log_path
+            source_name = str(source.container_role)  # TelemetrySource field is container_role
+            log_path = (
+                Path(source.host_log_path)
+                if isinstance(source.host_log_path, str)
+                else source.host_log_path
+            )
 
             logger.info(
                 "telemetry_collector_reading_source",
@@ -176,9 +180,7 @@ class TelemetryCollector:
                     if not raw_line:
                         continue  # Skip blank lines silently
 
-                    raw_dict = self._parse_line(
-                        raw_line, line_number, source_name, path_str
-                    )
+                    raw_dict = self._parse_line(raw_line, line_number, source_name, path_str)
                     if raw_dict is None:
                         continue  # Parse error already logged
 

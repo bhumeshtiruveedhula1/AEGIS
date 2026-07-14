@@ -88,6 +88,8 @@ class IsolationForestTrainer:
         contamination: float | None = None,
         n_estimators: int | None = None,
         random_state: int | None = None,
+        max_samples: int | float | str | None = None,
+        max_features: int | float | str | None = None,
         entity_dim: str = "user_host",
     ) -> None:
         settings = get_settings()
@@ -100,6 +102,12 @@ class IsolationForestTrainer:
         self._random_state = (
             random_state if random_state is not None else settings.isolation_forest_random_state
         )
+        self._max_samples = (
+            max_samples if max_samples is not None else settings.isolation_forest_max_samples
+        )
+        self._max_features = (
+            max_features if max_features is not None else settings.isolation_forest_max_features
+        )
         self._entity_dim = entity_dim
 
         logger.debug(
@@ -107,6 +115,8 @@ class IsolationForestTrainer:
             contamination=self._contamination,
             n_estimators=self._n_estimators,
             random_state=self._random_state,
+            max_samples=self._max_samples,
+            max_features=self._max_features,
             entity_dim=self._entity_dim,
         )
 
@@ -170,6 +180,8 @@ class IsolationForestTrainer:
             n_estimators=self._n_estimators,
             contamination=self._contamination,
             random_state=self._random_state,
+            max_samples=self._max_samples,
+            max_features=self._max_features,
             n_jobs=-1,  # use all available CPUs during training
         )
         isolation_forest.fit(X_scaled)
@@ -226,6 +238,8 @@ class IsolationForestTrainer:
             n_features=n_features,
             entity_count=len(entity_ids),
             duration_s=round(duration, 4),
+            max_samples=self._max_samples,
+            max_features=self._max_features,
         )
 
         return pipeline, metadata, training_result
@@ -284,7 +298,7 @@ class _DetectionPipeline:
         pipeline.isolation_forest : IsolationForest
     """
 
-    __slots__ = ("preprocessor", "isolation_forest")
+    __slots__ = ("preprocessor", "isolation_forest", "_training_X")
 
     def __init__(
         self,

@@ -26,7 +26,7 @@ Design Principles
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -104,11 +104,30 @@ class ModelMetadata(CyberShieldBaseModel):
         ge=1,
     )
     n_estimators: int = Field(description="Number of isolation trees.", ge=1)
-    contamination: float = Field(
-        description="Expected fraction of anomalies in training data.",
-        ge=0.0,
-        le=0.5,
+    contamination: float | Literal["auto"] = Field(
+        description=(
+            "Expected fraction of anomalies in training data. "
+            "'auto' uses sklearn's built-in threshold (contamination_=0.5/n_samples). "
+            "When float, must satisfy 0.0 <= contamination <= 0.5."
+        ),
     )
+
+    @field_validator("contamination", mode="before")
+    @classmethod
+    def _validate_contamination(cls, v: object) -> object:
+        """Accept 'auto' (sklearn literal) or a float in [0.0, 0.5]."""
+        if v == "auto":
+            return v
+        try:
+            fv = float(v)  # type: ignore[arg-type]
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"contamination must be 'auto' or a float in [0.0, 0.5], got {v!r}"
+            ) from exc
+        if not (0.0 <= fv <= 0.5):
+            raise ValueError(f"contamination float must be in [0.0, 0.5], got {fv}")
+        return fv
+
     random_state: int = Field(description="Random seed for reproducibility.")
     entity_dimension: str = Field(
         description="Entity type trained on (e.g. 'user_host', 'user', 'host').",
@@ -180,7 +199,29 @@ class TrainingResult(CyberShieldBaseModel):
     entity_count: int = Field(ge=0, description="Distinct entities in training set.")
     sample_count: int = Field(ge=0, description="Total training samples.")
     feature_dimension: int = Field(ge=1, description="Feature vector dimension.")
-    contamination: float = Field(ge=0.0, le=0.5, description="Contamination rate used.")
+    contamination: float | Literal["auto"] = Field(
+        description=(
+            "Contamination rate used during training. "
+            "'auto' = sklearn's built-in threshold. Float must be in [0.0, 0.5]."
+        ),
+    )
+
+    @field_validator("contamination", mode="before")
+    @classmethod
+    def _validate_contamination(cls, v: object) -> object:
+        """Accept 'auto' (sklearn literal) or a float in [0.0, 0.5]."""
+        if v == "auto":
+            return v
+        try:
+            fv = float(v)  # type: ignore[arg-type]
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"contamination must be 'auto' or a float in [0.0, 0.5], got {v!r}"
+            ) from exc
+        if not (0.0 <= fv <= 0.5):
+            raise ValueError(f"contamination float must be in [0.0, 0.5], got {fv}")
+        return fv
+
     n_estimators: int = Field(ge=1, description="Number of isolation trees.")
     random_state: int = Field(description="Random seed.")
     training_duration_seconds: float = Field(ge=0.0)

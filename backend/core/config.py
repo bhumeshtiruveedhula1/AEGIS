@@ -141,6 +141,41 @@ class Settings(BaseSettings):
         default=42,
         description="Random seed for reproducible model training.",
     )
+    isolation_forest_max_samples: int | float | str = Field(
+        default="auto",
+        description=(
+            "Number of samples drawn per tree. "
+            "'auto' = min(256, n_samples). "
+            "int = exact count, float = fraction of training set. "
+            "Set to 0.8 or similar to enable subsampling on small datasets."
+        ),
+    )
+    isolation_forest_max_features: int | float | str = Field(
+        default=1.0,
+        description=(
+            "Number of features drawn per split. "
+            "1.0 = all features. 0.5 = half the features. "
+            "'sqrt' uses sqrt(n_features) for more tree diversity."
+        ),
+    )
+
+    @field_validator("isolation_forest_max_samples", "isolation_forest_max_features", mode="before")
+    @classmethod
+    def _coerce_numeric_string(cls, v: object) -> int | float | str:
+        """Coerce numeric strings (e.g. from .env) to int/float for sklearn."""
+        if isinstance(v, str):
+            try:
+                as_int = int(v)
+                return as_int
+            except ValueError:
+                pass
+            try:
+                as_float = float(v)
+                return as_float
+            except ValueError:
+                pass
+        return v
+
     anomaly_score_threshold: float = Field(
         default=0.5,
         ge=0.0,

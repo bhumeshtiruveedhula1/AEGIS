@@ -90,14 +90,15 @@ from backend.normalization.exceptions import ParseError
 from backend.normalization.models import CanonicalEvent
 from backend.normalization.parsers import BaseParser
 
-
-_KNOWN_EVENT_TYPES = frozenset({
-    "ModbusRead",
-    "ModbusWrite",
-    "ModbusHeartbeat",
-    "PLCStatus",
-    "AttackerHeartbeat",
-})
+_KNOWN_EVENT_TYPES = frozenset(
+    {
+        "ModbusRead",
+        "ModbusWrite",
+        "ModbusHeartbeat",
+        "PLCStatus",
+        "AttackerHeartbeat",
+    }
+)
 
 # Modbus TCP always uses port 502
 _MODBUS_TCP_PORT = 502
@@ -135,7 +136,17 @@ class OTNodeParser(BaseParser):
         try:
             timestamp_raw = self._get_required(raw, "timestamp")
             event_type = self._get_required(raw, "event_type")
-            host = self._get_required(raw, "host")
+            # Digital twin data uses 'hostname'; canonical name is 'host'
+            host = raw.get("host") or raw.get("hostname") or ""
+            if not host:
+                from backend.normalization.exceptions import MissingFieldError
+
+                raise MissingFieldError(
+                    f"Required field 'host'/'hostname' is absent in raw record from source '{self.SOURCE}'.",
+                    source=self.SOURCE,
+                    raw_record=raw,
+                    field="host",
+                )
         except Exception as exc:
             raise ParseError(
                 str(exc),
@@ -176,10 +187,22 @@ class OTNodeParser(BaseParser):
 
         # ── Extra fields (cpu_load, memory_free_kb, etc.) ─────────────────
         known_keys = {
-            "event_id", "timestamp", "source", "event_type", "host",
-            "user", "resource", "action", "result", "raw_log",
-            "supervisory_host", "modbus_register", "modbus_value",
-            "modbus_function_code", "dst_ip", "port",
+            "event_id",
+            "timestamp",
+            "source",
+            "event_type",
+            "host",
+            "user",
+            "resource",
+            "action",
+            "result",
+            "raw_log",
+            "supervisory_host",
+            "modbus_register",
+            "modbus_value",
+            "modbus_function_code",
+            "dst_ip",
+            "port",
         }
         extra_fields = {k: v for k, v in raw.items() if k not in known_keys}
 
@@ -221,9 +244,7 @@ class OTNodeParser(BaseParser):
             self._warn(warnings, f"Cannot parse timestamp '{raw_ts}' — using now().")
             return datetime.now(UTC)
 
-    def _safe_int(
-        self, value: Any, field_name: str, warnings: list[str]
-    ) -> int | None:
+    def _safe_int(self, value: Any, field_name: str, warnings: list[str]) -> int | None:
         if value is None:
             return None
         try:

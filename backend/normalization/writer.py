@@ -64,7 +64,6 @@ logger = structlog.get_logger(__name__)
 
 def _default_serializer(obj: Any) -> Any:
     """JSON serializer for types not handled by the default encoder."""
-    from datetime import datetime  # noqa: PLC0415
 
     if hasattr(obj, "isoformat"):
         return obj.isoformat()
@@ -81,8 +80,10 @@ class NormalizedEventWriter:
     ----------
     output_path:  Path to the output JSONL file.
                   Created if it does not exist.
-                  Opened in APPEND mode — multiple runs accumulate.
-    overwrite:    If True, truncate the file before writing.
+                  Opened in WRITE (truncate) mode by default — each pipeline
+                  run produces a complete, self-contained output.
+    overwrite:    If True (default), truncate file before writing.
+                  Set to False to append to an existing file.
 
     Attributes
     ----------
@@ -93,14 +94,14 @@ class NormalizedEventWriter:
         self,
         output_path: Path,
         *,
-        overwrite: bool = False,
+        overwrite: bool = True,
     ) -> None:
         self._path = output_path
         self._overwrite = overwrite
         self._fh = None
         self.events_written: int = 0
 
-    def __enter__(self) -> "NormalizedEventWriter":
+    def __enter__(self) -> NormalizedEventWriter:
         self._open()
         return self
 

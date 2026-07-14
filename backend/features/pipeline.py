@@ -36,9 +36,9 @@ most refined behavioral model available for the actor.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import UTC, datetime
-from pathlib import Path
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING
 
 import structlog
 
@@ -65,24 +65,25 @@ logger = structlog.get_logger(__name__)
 # Entity key resolution helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_user_key(event: CanonicalEvent) -> EntityKey | None:
     try:
         return EntityKey(entity_type="user", entity_id=event.user)
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
 
 
 def _make_host_key(event: CanonicalEvent) -> EntityKey | None:
     try:
         return EntityKey(entity_type="host", entity_id=event.host)
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
 
 
 def _make_source_key(event: CanonicalEvent) -> EntityKey | None:
     try:
         return EntityKey(entity_type="source", entity_id=event.source)
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
 
 
@@ -90,13 +91,14 @@ def _make_user_host_key(event: CanonicalEvent) -> EntityKey | None:
     try:
         composite_id = f"{event.user}::{event.host}"
         return EntityKey(entity_type="user_host", entity_id=composite_id)
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
 
 
 # ---------------------------------------------------------------------------
 # FeaturePipeline
 # ---------------------------------------------------------------------------
+
 
 class FeaturePipeline:
     """
@@ -232,7 +234,7 @@ class FeaturePipeline:
                 records.extend(event_records)
                 if not event_records:
                     skipped += 1
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning(
                     "feature_pipeline_event_error",
                     event_id=getattr(event, "event_id", "unknown"),
@@ -267,9 +269,7 @@ class FeaturePipeline:
 
         return records, report
 
-    def stream_events(
-        self, event_iter: Iterator[CanonicalEvent]
-    ) -> Iterator[FeatureRecord]:
+    def stream_events(self, event_iter: Iterator[CanonicalEvent]) -> Iterator[FeatureRecord]:
         """
         Generator that processes events one-at-a-time from an iterator.
 
@@ -279,7 +279,7 @@ class FeaturePipeline:
         for event in event_iter:
             try:
                 yield from self.process_event(event)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning(
                     "feature_pipeline_stream_error",
                     event_id=getattr(event, "event_id", "unknown"),
@@ -309,7 +309,7 @@ class FeaturePipeline:
         self,
         event: CanonicalEvent,
         entity_key: EntityKey,
-        baseline: "EntityBaseline | None",
+        baseline: EntityBaseline | None,
     ) -> FeatureRecord:
         """Run all extractors and assemble a FeatureRecord."""
         all_features: dict[str, float] = {}
@@ -325,6 +325,31 @@ class FeaturePipeline:
             values=all_features,
             extraction_warnings=all_warnings,
         )
+
+        # F01 — Partial cold-start warning.
+        # The NEG-05 scorer guard only rejects records that are BOTH
+        # baseline_available=False AND entirely zero. Records with non-zero
+        # event-level features (hour_of_day, result_is_failure, etc.) but no
+        # baseline will reach the Isolation Forest scored against a model that
+        # may have been trained with different feature distributions.
+        # This log makes those records visible so operators know scoring is
+        # occurring without baseline context.
+        if baseline is None:
+            arr = vector.to_array()
+            if any(v != 0.0 for v in arr):
+                non_zero_names = [name for name, val in all_features.items() if val != 0.0]
+                logger.warning(
+                    "feature_pipeline_cold_start_partial_vector",
+                    event_id=event.event_id,
+                    entity_key=repr(entity_key),
+                    non_zero_feature_count=len(non_zero_names),
+                    non_zero_features=non_zero_names[:10],  # cap for log sanity
+                    detail=(
+                        "baseline_available=False but feature vector is not all-zero. "
+                        "Event-level features are populated; baseline features are 0.0. "
+                        "This record will reach the scorer without baseline context."
+                    ),
+                )
 
         return FeatureRecord(
             event_id=event.event_id,

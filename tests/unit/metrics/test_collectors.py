@@ -12,8 +12,6 @@ Tests verify:
 
 from __future__ import annotations
 
-import pytest
-
 from backend.metrics.collectors import get_all_collectors, get_collector_names
 from backend.metrics.collectors.baseline import BaselineMetricsCollector
 from backend.metrics.collectors.detection import DetectionMetricsCollector
@@ -22,20 +20,18 @@ from backend.metrics.collectors.health import PlatformHealthCollector
 from backend.metrics.collectors.pipeline import PipelineMetricsCollector
 from backend.metrics.collectors.response import ResponseMetricsCollector
 from backend.metrics.models import MetricAvailability, MetricDomain
-
 from tests.unit.metrics.conftest import (
     make_baseline_profile,
     make_feature_pipeline_report,
     make_mock_norm_report,
 )
 
-
 # ===========================================================================
 # Registry
 # ===========================================================================
 
-class TestCollectorRegistry:
 
+class TestCollectorRegistry:
     def test_all_six_collectors_registered(self) -> None:
         names = get_collector_names()
         assert "pipeline" in names
@@ -67,8 +63,8 @@ class TestCollectorRegistry:
 # PipelineMetricsCollector
 # ===========================================================================
 
-class TestPipelineCollector:
 
+class TestPipelineCollector:
     def test_cold_start_all_insufficient(self) -> None:
         c = PipelineMetricsCollector()
         result = c.collect()
@@ -128,6 +124,7 @@ class TestPipelineCollector:
     def test_zero_normalized_error_rate_insufficient(self) -> None:
         """Zero events → cannot compute meaningful error rate."""
         from unittest.mock import MagicMock
+
         c = PipelineMetricsCollector()
         norm = MagicMock()
         norm.events_normalized = 0
@@ -149,8 +146,8 @@ class TestPipelineCollector:
 # BaselineMetricsCollector
 # ===========================================================================
 
-class TestBaselineCollector:
 
+class TestBaselineCollector:
     def test_cold_start_all_insufficient(self) -> None:
         c = BaselineMetricsCollector()
         result = c.collect()
@@ -184,7 +181,10 @@ class TestBaselineCollector:
         result = c.collect(baseline_profile=profile)
         assert result.min_observations_per_entity.is_computed
         assert result.max_observations_per_entity.is_computed
-        assert result.min_observations_per_entity.safe_float() < result.max_observations_per_entity.safe_float()
+        assert (
+            result.min_observations_per_entity.safe_float()
+            < result.max_observations_per_entity.safe_float()
+        )
 
     def test_baseline_age_computed(self) -> None:
         c = BaselineMetricsCollector()
@@ -219,15 +219,15 @@ class TestBaselineCollector:
 # FeatureMetricsCollector
 # ===========================================================================
 
-class TestFeatureCollector:
 
+class TestFeatureCollector:
     def test_schema_constants_always_computed(self) -> None:
         """Schema constants are always available regardless of data."""
         c = FeatureMetricsCollector()
         result = c.collect()
         assert result.feature_schema_version.is_computed
         assert result.feature_dimension.is_computed
-        assert result.feature_dimension.safe_float() == 56.0
+        assert result.feature_dimension.safe_float() == 57.0  # auth_unexpected_failure added
 
     def test_with_feature_report(self) -> None:
         c = FeatureMetricsCollector()
@@ -265,8 +265,8 @@ class TestFeatureCollector:
 # DetectionMetricsCollector
 # ===========================================================================
 
-class TestDetectionCollector:
 
+class TestDetectionCollector:
     def test_all_metrics_unavailable(self) -> None:
         c = DetectionMetricsCollector()
         result = c.collect()
@@ -290,8 +290,8 @@ class TestDetectionCollector:
 # ResponseMetricsCollector
 # ===========================================================================
 
-class TestResponseCollector:
 
+class TestResponseCollector:
     def test_all_metrics_unavailable(self) -> None:
         c = ResponseMetricsCollector()
         result = c.collect()
@@ -310,8 +310,8 @@ class TestResponseCollector:
 # PlatformHealthCollector
 # ===========================================================================
 
-class TestHealthCollector:
 
+class TestHealthCollector:
     def test_schema_versions_computed(self) -> None:
         c = PlatformHealthCollector()
         result = c.collect()
@@ -327,13 +327,17 @@ class TestHealthCollector:
 
     def test_future_modules_not_implemented(self) -> None:
         from backend.metrics.models import ComponentStatus
+
         c = PlatformHealthCollector()
         result = c.collect()
-        future = [comp for comp in result.components if comp.status == ComponentStatus.NOT_IMPLEMENTED]
+        future = [
+            comp for comp in result.components if comp.status == ComponentStatus.NOT_IMPLEMENTED
+        ]
         assert len(future) >= 2  # detection_core, response_orchestrator, llm_enrichment
 
     def test_metrics_engine_self_reports_healthy(self) -> None:
         from backend.metrics.models import ComponentStatus
+
         c = PlatformHealthCollector()
         result = c.collect()
         metrics_comp = result.component_by_name("metrics_engine")

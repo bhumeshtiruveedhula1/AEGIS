@@ -40,7 +40,6 @@ from backend.baseline.models import EntityKey
 from backend.shared.models import CyberShieldBaseModel
 from backend.shared.utils.id_utils import generate_id
 
-
 # ---------------------------------------------------------------------------
 # Schema version sentinel
 # ---------------------------------------------------------------------------
@@ -72,6 +71,7 @@ FEATURE_GROUPS: dict[str, list[str]] = {
         "source_frequency",
         "entity_observation_count",
         "baseline_window_days",
+        "auth_unexpected_failure",  # composite: result_is_failure × (1 - result_failure_rate_baseline)
     ],
     "network": [
         "dst_ip_is_novel",
@@ -128,9 +128,7 @@ FEATURE_GROUPS: dict[str, list[str]] = {
 }
 
 # Flat ordered list — the canonical feature order for all downstream consumers
-ALL_FEATURE_NAMES: list[str] = [
-    name for group in FEATURE_GROUPS.values() for name in group
-]
+ALL_FEATURE_NAMES: list[str] = [name for group in FEATURE_GROUPS.values() for name in group]
 
 # Fast lookup set
 _ALL_FEATURE_SET: frozenset[str] = frozenset(ALL_FEATURE_NAMES)
@@ -142,6 +140,7 @@ FEATURE_DIMENSION = len(ALL_FEATURE_NAMES)
 # ---------------------------------------------------------------------------
 # FeatureSchema — ordered registry of all declared features
 # ---------------------------------------------------------------------------
+
 
 class FeatureSchema(CyberShieldBaseModel):
     """
@@ -187,6 +186,7 @@ class FeatureSchema(CyberShieldBaseModel):
 # ---------------------------------------------------------------------------
 # FeatureVector — the output of one feature extraction pass
 # ---------------------------------------------------------------------------
+
 
 class FeatureVector(CyberShieldBaseModel):
     """
@@ -235,7 +235,7 @@ class FeatureVector(CyberShieldBaseModel):
         return cleaned
 
     @model_validator(mode="after")
-    def _fill_missing_features(self) -> "FeatureVector":
+    def _fill_missing_features(self) -> FeatureVector:
         """
         Ensure every declared feature has a value.
         Features absent from `values` are set to 0.0.
@@ -305,6 +305,7 @@ class FeatureVector(CyberShieldBaseModel):
 # ---------------------------------------------------------------------------
 # FeatureRecord — one serialisable output record written to JSONL
 # ---------------------------------------------------------------------------
+
 
 class FeatureRecord(CyberShieldBaseModel):
     """
@@ -377,6 +378,7 @@ class FeatureRecord(CyberShieldBaseModel):
 # ---------------------------------------------------------------------------
 # FeaturePipelineReport — summary of one feature extraction run
 # ---------------------------------------------------------------------------
+
 
 class FeaturePipelineReport(CyberShieldBaseModel):
     """

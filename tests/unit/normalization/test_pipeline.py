@@ -16,24 +16,22 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
-
-from backend.normalization.models import CanonicalEvent, RawRecord
+from backend.normalization.models import CanonicalEvent
 from backend.normalization.pipeline import NormalizationPipeline
 from backend.normalization.writer import NormalizedEventWriter
 from tests.unit.normalization.conftest import (
+    make_attacker_raw,
+    make_dc_raw,
     make_hospital_raw,
     make_ot_raw,
-    make_dc_raw,
-    make_attacker_raw,
     make_raw_record,
     write_jsonl,
 )
 
-
 # ---------------------------------------------------------------------------
 # Registry mock builder
 # ---------------------------------------------------------------------------
+
 
 def _mock_registry(*file_specs: tuple[str, Path]) -> MagicMock:
     """
@@ -44,7 +42,7 @@ def _mock_registry(*file_specs: tuple[str, Path]) -> MagicMock:
     sources = []
     for role, path in file_specs:
         src = MagicMock()
-        src.role = role
+        src.container_role = role  # matches TelemetrySource.container_role (digital_twin/models.py)
         src.host_log_path = path
         sources.append(src)
     registry.list_telemetry_sources.return_value = sources
@@ -54,6 +52,7 @@ def _mock_registry(*file_specs: tuple[str, Path]) -> MagicMock:
 # ===========================================================================
 # normalize_record() — single record API
 # ===========================================================================
+
 
 class TestNormalizeRecord:
     """Tests normalize_record() — the per-record public API."""
@@ -123,8 +122,8 @@ class TestNormalizeRecord:
 # stream_normalized() — generator API
 # ===========================================================================
 
-class TestStreamNormalized:
 
+class TestStreamNormalized:
     def test_stream_normalized_yields_canonical_events(self, tmp_path: Path) -> None:
         log_file = tmp_path / "hospital.jsonl"
         write_jsonl(log_file, [make_hospital_raw()] * 10)
@@ -167,8 +166,8 @@ class TestStreamNormalized:
 # run() — full pipeline with disk I/O
 # ===========================================================================
 
-class TestRunPipeline:
 
+class TestRunPipeline:
     def test_run_returns_parse_report(self, tmp_path: Path) -> None:
         log_file = tmp_path / "hospital.jsonl"
         write_jsonl(log_file, [make_hospital_raw()] * 5)
@@ -248,9 +247,7 @@ class TestRunPipeline:
             ("hospital_server", h_file),
             ("ot_node", ot_file),
         )
-        report = NormalizationPipeline(
-            registry, output_dir=tmp_path / "out"
-        ).run()
+        report = NormalizationPipeline(registry, output_dir=tmp_path / "out").run()
 
         assert len(report.per_source_stats) == 2
         sources = {s.source for s in report.per_source_stats}

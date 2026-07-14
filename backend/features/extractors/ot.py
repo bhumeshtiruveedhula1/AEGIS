@@ -27,6 +27,16 @@ Design notes
   any new SCADA host contacting an OT device warrants attention.
 - modbus_function_code_is_novel catches write commands (FC06) on
   read-only baseline entities.
+
+Cold-start novelty default — Architectural Decision (F02, Option A)
+--------------------------------------------------------------------
+modbus_function_code_is_novel and supervisory_host_is_novel both
+default to 0.0 when baseline (or modbus sub-baseline) is None.
+
+Rationale: same as network/process extractors — novelty requires a
+reference set. Without one, the concept is undefined. The
+`baseline_presence` group carries the cold-start signal to the
+Isolation Forest. See network.py module docstring for full rationale.
 """
 
 from __future__ import annotations
@@ -61,8 +71,8 @@ class OTExtractor(BaseExtractor):
 
     def extract(
         self,
-        event: "CanonicalEvent",
-        baseline: "EntityBaseline | None",
+        event: CanonicalEvent,
+        baseline: EntityBaseline | None,
     ) -> dict[str, float]:
         mb: ModbusBaseline | None = None
         if baseline is not None:

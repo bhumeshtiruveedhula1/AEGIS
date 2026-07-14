@@ -118,16 +118,30 @@ class AnomalyScorer:
         metadata: ModelMetadata,
         *,
         threshold: float | None = None,
+        calibrator: object | None = None,  # optional IsotonicCalibrator
+        calibrated_threshold: float | None = None,  # ECDF threshold on calibrated scale
     ) -> None:
         self._pipeline = pipeline
         self._metadata = metadata
         settings = get_settings()
         self._threshold = threshold if threshold is not None else settings.anomaly_score_threshold
 
+        # Calibrator support — optional, backward-compatible.
+        # If both calibrator and calibrated_threshold are provided, scoring uses
+        # calibrated probabilities; otherwise falls back to _linear_anomaly_score.
+        self._calibrator = calibrator
+        self._calibrated_threshold = calibrated_threshold
+        self._use_calibration = (
+            calibrator is not None
+            and calibrated_threshold is not None
+            and hasattr(calibrator, "predict_proba")
+        )
+
         logger.debug(
             "scorer_initialised",
             model_id=metadata.model_id,
-            threshold=self._threshold,
+            threshold=self._calibrated_threshold if self._use_calibration else self._threshold,
+            calibration_active=self._use_calibration,
             entity_dimension=metadata.entity_dimension,
         )
 
@@ -173,7 +187,9 @@ class AnomalyScorer:
         # any meaningful values because the entity was never observed during training.
         # Records with baseline_available=True may legitimately be all-zero
         # (entity observed but no anomalous activity detected) and must be scored.
-        if not record.baseline_available and all(v == 0.0 for v in record.feature_vector.to_array()):
+        if not record.baseline_available and all(
+            v == 0.0 for v in record.feature_vector.to_array()
+        ):
             logger.warning(
                 "empty_feature_vector_skipped",
                 entity_type=record.entity_key.entity_type,
@@ -184,10 +200,17 @@ class AnomalyScorer:
 
         X = self._pipeline.preprocessor.transform_single(record)
         raw_score = float(self._pipeline.isolation_forest.decision_function(X)[0])
-        anomaly_score = _linear_anomaly_score(raw_score)
 
-        if anomaly_score < self._threshold:
-            return None
+        if self._use_calibration:
+            import numpy as _np
+
+            anomaly_score = float(self._calibrator.predict_proba(_np.array([raw_score]))[0])
+            if anomaly_score < self._calibrated_threshold:
+                return None
+        else:
+            anomaly_score = _linear_anomaly_score(raw_score)
+            if anomaly_score < self._threshold:
+                return None
 
         alert = self._build_alert(record, raw_score, anomaly_score)
         logger.info(
@@ -196,7 +219,8 @@ class AnomalyScorer:
             entity_type=alert.entity_key.entity_type,
             entity_id=alert.entity_key.entity_id,
             anomaly_score=alert.anomaly_score,
-            threshold=self._threshold,
+            threshold=self._calibrated_threshold if self._use_calibration else self._threshold,
+            calibration_active=self._use_calibration,
             novelty_count=alert.novelty_count,
         )
         return alert
@@ -232,10 +256,16 @@ class AnomalyScorer:
         def _is_empty(r: FeatureRecord) -> bool:
             return not r.baseline_available and all(v == 0.0 for v in r.feature_vector.to_array())
 
-        to_score = [r for r in records if r.entity_key.entity_type == target_dim and not _is_empty(r)]
-        empty_skipped = sum(1 for r in records if r.entity_key.entity_type == target_dim and _is_empty(r))
+        to_score = [
+            r for r in records if r.entity_key.entity_type == target_dim and not _is_empty(r)
+        ]
+        empty_skipped = sum(
+            1 for r in records if r.entity_key.entity_type == target_dim and _is_empty(r)
+        )
         if empty_skipped:
-            logger.warning("batch_empty_vectors_skipped", count=empty_skipped, entity_dim=target_dim)
+            logger.warning(
+                "batch_empty_vectors_skipped", count=empty_skipped, entity_dim=target_dim
+            )
 
         result = DetectionResult(
             run_id=run_id_val,
@@ -282,8 +312,15 @@ class AnomalyScorer:
         for i, record in enumerate(to_score):
             try:
                 raw_score = float(raw_scores[i])
-                anomaly_score = _linear_anomaly_score(raw_score)
-                if anomaly_score >= self._threshold:
+                if self._use_calibration:
+                    import numpy as _np
+
+                    anomaly_score = float(self._calibrator.predict_proba(_np.array([raw_score]))[0])
+                    fires = anomaly_score >= self._calibrated_threshold
+                else:
+                    anomaly_score = _linear_anomaly_score(raw_score)
+                    fires = anomaly_score >= self._threshold
+                if fires:
                     alert = self._build_alert(record, raw_score, anomaly_score)
                     alerts.append(alert)
             except Exception as exc:

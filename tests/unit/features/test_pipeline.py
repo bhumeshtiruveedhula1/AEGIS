@@ -8,26 +8,23 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from backend.baseline.models import EntityKey
 from backend.baseline.reader_api import BaselineReader
-from backend.features.models import FEATURE_DIMENSION, ALL_FEATURE_NAMES
+from backend.features.models import ALL_FEATURE_NAMES, FEATURE_DIMENSION
 from backend.features.pipeline import FeaturePipeline
-
 from tests.unit.features.conftest import (
-    make_hospital_event,
     make_dc_event,
-    make_ot_event,
     make_hospital_baseline,
-    make_dc_baseline,
-    make_ot_baseline,
+    make_hospital_event,
+    make_ot_event,
 )
 
 
 def _make_mock_reader(
-    user_baseline=None, host_baseline=None,
-    source_baseline=None, user_host_baseline=None,
+    user_baseline=None,
+    host_baseline=None,
+    source_baseline=None,
+    user_host_baseline=None,
     is_ready: bool = True,
 ) -> MagicMock:
     """Build a mock BaselineReader that returns specific baselines."""
@@ -54,8 +51,8 @@ def _make_mock_reader(
 # FeaturePipeline — cold start (no baseline)
 # ===========================================================================
 
-class TestFeaturePipelineColdStart:
 
+class TestFeaturePipelineColdStart:
     def test_returns_records_on_cold_start(self) -> None:
         reader = _make_mock_reader(is_ready=False)
         pipeline = FeaturePipeline(baseline_reader=reader)
@@ -88,8 +85,8 @@ class TestFeaturePipelineColdStart:
 # FeaturePipeline — with baseline
 # ===========================================================================
 
-class TestFeaturePipelineWithBaseline:
 
+class TestFeaturePipelineWithBaseline:
     def test_baseline_available_true(self) -> None:
         baseline = make_hospital_baseline()
         reader = _make_mock_reader(user_baseline=baseline)
@@ -136,8 +133,8 @@ class TestFeaturePipelineWithBaseline:
 # FeaturePipeline — entity dimensions
 # ===========================================================================
 
-class TestFeaturePipelineDimensions:
 
+class TestFeaturePipelineDimensions:
     def test_emits_4_records_for_full_event(self) -> None:
         reader = _make_mock_reader()
         pipeline = FeaturePipeline(baseline_reader=reader, emit_all_dimensions=True)
@@ -203,8 +200,8 @@ class TestFeaturePipelineDimensions:
 # FeaturePipeline — process_batch
 # ===========================================================================
 
-class TestFeaturePipelineBatch:
 
+class TestFeaturePipelineBatch:
     def test_batch_returns_records_and_report(self) -> None:
         reader = _make_mock_reader(is_ready=False)
         pipeline = FeaturePipeline(baseline_reader=reader)
@@ -232,8 +229,8 @@ class TestFeaturePipelineBatch:
 # FeaturePipeline — determinism
 # ===========================================================================
 
-class TestFeaturePipelineDeterminism:
 
+class TestFeaturePipelineDeterminism:
     def test_same_input_same_output(self) -> None:
         baseline = make_hospital_baseline()
         reader = _make_mock_reader(user_baseline=baseline)
@@ -243,12 +240,13 @@ class TestFeaturePipelineDeterminism:
         records_b = pipeline.process_event(event)
         assert records_a[0].feature_vector.to_array() == records_b[0].feature_vector.to_array()
 
-    def test_feature_vector_length_56(self) -> None:
+    def test_feature_vector_length_57(self) -> None:
+        # auth_unexpected_failure added to FEATURE_GROUPS['frequency'] during ML lab build
         baseline = make_hospital_baseline()
         reader = _make_mock_reader(user_baseline=baseline)
         pipeline = FeaturePipeline(baseline_reader=reader, primary_only=True)
         records = pipeline.process_event(make_hospital_event())
-        assert len(records[0].feature_vector.to_array()) == 56
+        assert len(records[0].feature_vector.to_array()) == 57
 
     def test_all_feature_names_present_in_vector(self) -> None:
         reader = _make_mock_reader(is_ready=False)

@@ -3,7 +3,7 @@ backend.features.extractors.frequency — Frequency Feature Extractor
 ====================================================================
 Module 2.2 — Behavioral Feature Engine
 
-Computes 8 behavioral frequency features comparing current event
+Computes 9 behavioral frequency features comparing current event
 characteristics against entity baseline frequency distributions.
 
 Features
@@ -16,6 +16,9 @@ result_is_failure          : 1.0 if current event result == "failure"
 source_frequency           : Count of this source in baseline
 entity_observation_count   : Total events in baseline for this entity
 baseline_window_days       : Duration of baseline window (last_seen - first_seen)
+auth_unexpected_failure    : result_is_failure * (1 - result_failure_rate_baseline).
+                             High when event is a failure but baseline shows almost no
+                             failures — strong brute-force / credential-stuffing signal.
 
 Design notes
 ------------
@@ -54,33 +57,36 @@ class FrequencyExtractor(BaseExtractor):
             "source_frequency",
             "entity_observation_count",
             "baseline_window_days",
+            "auth_unexpected_failure",
         ]
 
     def extract(
         self,
-        event: "CanonicalEvent",
-        baseline: "EntityBaseline | None",
+        event: CanonicalEvent,
+        baseline: EntityBaseline | None,
     ) -> dict[str, float]:
-        result_is_fail = binary(
-            event.result is not None and event.result.lower() == "failure"
-        )
+        result_is_fail = binary(event.result is not None and event.result.lower() == "failure")
 
         if baseline is None:
+            # event_type_frequency_rank: use 100.0 (the unseen-value cap) rather
+            # than 0.0 (rank 0 = most-common) so that cold-start events are treated
+            # as "never seen" rather than "maximally familiar" by the Isolation Forest.
+            # All other frequency features remain 0.0 (genuinely zero counts/rates).
             return {
                 "event_type_frequency": 0.0,
-                "event_type_frequency_rank": 0.0,
+                "event_type_frequency_rank": 100.0,
                 "action_frequency": 0.0,
                 "result_failure_rate_baseline": 0.0,
                 "result_is_failure": result_is_fail,
                 "source_frequency": 0.0,
                 "entity_observation_count": 0.0,
                 "baseline_window_days": 0.0,
+                # Cold-start: no baseline failure rate → treat failure as unexpected
+                "auth_unexpected_failure": result_is_fail,
             }
 
         # Event type frequency
-        et_freq = safe_frequency(
-            event.event_type, baseline.event_type_distribution
-        )
+        et_freq = safe_frequency(event.event_type, baseline.event_type_distribution)
         et_rank = frequency_rank(event.event_type, baseline.event_type_distribution)
 
         # Action frequency
@@ -113,4 +119,8 @@ class FrequencyExtractor(BaseExtractor):
             "source_frequency": src_freq,
             "entity_observation_count": obs_count,
             "baseline_window_days": window_days,
+            # Composite: 1.0 when event is a failure BUT baseline shows almost no failures.
+            # Captures brute-force / credential-stuffing where individual auth failures
+            # are rare in baseline but current event is a failure.
+            "auth_unexpected_failure": result_is_fail * max(0.0, 1.0 - result_fail_rate),
         }
