@@ -45,7 +45,7 @@ stable normalisation anchor without over-compressing high-SHAP events.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Iterable, Iterator
+from collections.abc import Iterable, Iterator
 
 import structlog
 
@@ -63,8 +63,8 @@ _W_SHAP: float = 0.40
 _W_FEATURE_BREADTH: float = 0.20
 
 # Normalisation anchors
-_MAX_SHAP_TOTAL: float = 3.0    # max expected |SHAP| sum for 56 features
-_MAX_FEATURE_MATCH: int = 10    # max expected matched features per technique
+_MAX_SHAP_TOTAL: float = 3.0  # max expected |SHAP| sum for 56 features
+_MAX_FEATURE_MATCH: int = 10  # max expected matched features per technique
 
 # Default confidence threshold below which techniques are discarded
 DEFAULT_MIN_CONFIDENCE: float = 0.10
@@ -161,7 +161,7 @@ class MitreMapper:
             expl = expl_map.get(alert.alert_id)
             try:
                 results.append(self.map_alert(alert, expl))
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 errors += 1
                 logger.warning(
                     "batch_map_error",
@@ -194,7 +194,7 @@ class MitreMapper:
             try:
                 yield self.map_alert(alert, expl)
                 emitted += 1
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning(
                     "stream_map_error",
                     alert_id=alert.alert_id,
@@ -219,24 +219,41 @@ class MitreMapper:
             shap_contributions = list(explanation.feature_contributions)  # already ranked
             top_features = explanation.top_features
 
-        # Fallback: use raw_feature_values keys from alert if no explanation
-        feature_pool: list[str] = (
-            top_features
-            or list((alert.raw_feature_values or {}).keys())
-        )
+        # Feature pool for technique lookup:
+        #   - If explanation provided: use its top_features (SHAP-ranked top-3 from ExplanationResult).
+        #     This is the proven mechanism from explain/shap_report.py — already ranked by |SHAP|.
+        #     Using the full feature_contributions union instead was the root cause of the
+        #     scenario-discrimination failure: every alert mapped to identical broad technique sets
+        #     because all 57 features always overlap with the same kb entries.
+        #   - If no explanation at all: fall back to raw_feature_values keys (graceful degradation
+        #     for alerts scored without SHAP, e.g. cold-start or non-IT entities).
+        if explanation is not None:
+            feature_pool = top_features  # SHAP top-3 from ExplanationResult.top_features
+        else:
+            feature_pool = list((alert.raw_feature_values or {}).keys())
 
         # --- Step 2: accumulate evidence per technique_id
         # Structure: technique_id → evidence accumulator dict
-        accumulators: dict[str, dict] = defaultdict(lambda: {
-            "matched_features": [],
-            "shap_contributors": [],
-            "shap_total": 0.0,
-        })
+        accumulators: dict[str, dict] = defaultdict(
+            lambda: {
+                "matched_features": [],
+                "shap_contributors": [],
+                "shap_total": 0.0,
+            }
+        )
 
-        # Primary signal: SHAP contributions via knowledge base
+        # Primary signal: SHAP contributions via knowledge base — restricted to top_features.
+        # IMPORTANT: only iterate contributions whose feature_name is in top_features.
+        # All 57 feature_contributions are passed in ExplanationResult but technique mapping
+        # must use ONLY the top SHAP contributors so different scenarios produce different
+        # technique sets. Iterating all 57 caused every alert to map to the same broad
+        # technique union regardless of the specific anomaly driver.
+        top_features_set: set[str] = set(top_features)
         if shap_contributions:
             for contrib in shap_contributions:
                 fname = contrib.feature_name
+                if fname not in top_features_set:
+                    continue  # skip non-top features — this is the scenario-discrimination fix
                 tech_ids = self._kb.technique_ids_for_feature(fname)
                 if not tech_ids:
                     continue
@@ -306,10 +323,7 @@ class MitreMapper:
             "alert_mapped",
             alert_id=alert.alert_id,
             techniques=len(technique_mappings),
-            primary=(
-                technique_mappings[0].technique.technique_id
-                if technique_mappings else None
-            ),
+            primary=(technique_mappings[0].technique.technique_id if technique_mappings else None),
         )
 
         return self._build_mapped_attack(alert, explanation, technique_mappings)
@@ -351,24 +365,17 @@ class MitreMapper:
         """Build human-readable evidence strings for this mapping."""
         ev: list[str] = []
         ev.append(
-            f"Isolation Forest anomaly score {anomaly_score:.3f} "
-            f"above detection threshold."
+            f"Isolation Forest anomaly score {anomaly_score:.3f} " f"above detection threshold."
         )
         ev.append(
             f"{len(matched_features)} behavioral feature(s) match "
             f"{technique.technique_id} ({technique.name})."
         )
         if matched_features:
-            ev.append(
-                f"Key features: {', '.join(matched_features[:3])}."
-            )
+            ev.append(f"Key features: {', '.join(matched_features[:3])}.")
         if shap_total > 0:
-            ev.append(
-                f"Cumulative SHAP contribution to technique: {shap_total:.4f}."
-            )
-        ev.append(
-            f"Tactic: {technique.tactic.name} ({technique.tactic.tactic_id})."
-        )
+            ev.append(f"Cumulative SHAP contribution to technique: {shap_total:.4f}.")
+        ev.append(f"Tactic: {technique.tactic.name} ({technique.tactic.tactic_id}).")
         return ev
 
     @staticmethod
