@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberShield — Operational Dashboard</title>
+  <meta name="description" content="CyberShield AEGIS Operational Security Dashboard — real-time threat detection, attack chain analysis, and response orchestration." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+</head>
+<body>
+  <!-- ── Navigation ───────────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <div class="nav-brand">
+      <div class="nav-brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <span class="nav-brand-name">CyberShield</span>
+        <span class="nav-brand-sub">Operation AEGIS</span>
+      </div>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tab-overview" onclick="showPanel('overview')">Overview</button>
+      <button class="nav-tab" id="tab-incidents" onclick="showPanel('incidents')">Incidents</button>
+      <button class="nav-tab" id="tab-chains" onclick="showPanel('chains')">Attack Chains</button>
+      <button class="nav-tab" id="tab-graph" onclick="showPanel('graph')">Attack Graph</button>
+      <button class="nav-tab" id="tab-mitre" onclick="showPanel('mitre')">MITRE ATT&CK</button>
+      <button class="nav-tab" id="tab-shap" onclick="showPanel('shap')">Explainability</button>
+      <button class="nav-tab" id="tab-context" onclick="showPanel('context')">Context</button>
+      <button class="nav-tab" id="tab-orchestrator" onclick="showPanel('orchestrator')">Response</button>
+      <button class="nav-tab" id="tab-metrics" onclick="showPanel('metrics')">Metrics</button>
+    </div>
+
+    <div class="nav-actions">
+      <div class="status-dot" id="status-dot" title="Platform Status"></div>
+      <span class="nav-time" id="nav-time">—</span>
+      <button class="btn-refresh" id="btn-refresh" onclick="refreshAll()" title="Refresh all data">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Main Content ──────────────────────────────────────────────── -->
+  <main class="main" id="main">
+
+    <!-- ── 1. Platform Overview ───────────────────────────────────── -->
+    <section class="panel active" id="panel-overview">
+      <div class="panel-header">
+        <h1 class="panel-title">Platform Overview</h1>
+        <span class="panel-updated" id="overview-updated">Loading…</span>
+      </div>
+
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi-card" id="kpi-events">
+          <div class="kpi-icon kpi-icon--blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value" id="kpi-events-val">—</div>
+            <div class="kpi-label">Events Normalized</div>
+          </div>
+        </div>
+        <div class="kpi-card" id="kpi-alerts">
+          <div class="kpi-icon kpi-icon--amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value" id="kpi-alerts-val">—</div>
+            <div class="kpi-label">Alerts Generated</div>
+          </div>
+        </div>
+        <div class="kpi-card" id="kpi-high">
+          <div class="kpi-icon kpi-icon--red">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value" id="kpi-high-val">—</div>
+            <div class="kpi-label">High Severity</div>
+          </div>
+        </div>
+        <div class="kpi-card" id="kpi-chains">
+          <div class="kpi-icon kpi-icon--purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><path d="M9 6v5M15 6v5M9 13v5M15 13v5"/></svg>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value" id="kpi-chains-val">—</div>
+            <div class="kpi-label">Active Chains</div>
+          </div>
+        </div>
+        <div class="kpi-card" id="kpi-decisions">
+          <div class="kpi-icon kpi-icon--green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value" id="kpi-decisions-val">—</div>
+            <div class="kpi-label">Response Decisions (Today)</div>
+          </div>
+        </div>
+        <div class="kpi-card" id="kpi-fpr">
+          <div class="kpi-icon kpi-icon--teal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value" id="kpi-fpr-val">—</div>
+            <div class="kpi-label">False Positive Rate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orchestration summary today -->
+      <div class="section-header">
+        <h2 class="section-title">Response Decisions — Today</h2>
+      </div>
+      <div class="approval-summary" id="approval-summary">
+        <div class="approval-bar" id="approval-bar"></div>
+        <div class="approval-legend" id="approval-legend"></div>
+      </div>
+
+      <!-- Platform health -->
+      <div class="section-header">
+        <h2 class="section-title">Platform Health</h2>
+      </div>
+      <div class="health-grid" id="health-grid">
+        <div class="health-skeleton">Loading health…</div>
+      </div>
+    </section>
+
+    <!-- ── 2. Active Incidents ─────────────────────────────────────── -->
+    <section class="panel" id="panel-incidents">
+      <div class="panel-header">
+        <h1 class="panel-title">Active Incidents</h1>
+        <span class="panel-updated" id="incidents-updated">Loading…</span>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table" id="incidents-table">
+          <thead>
+            <tr>
+              <th>Alert ID</th>
+              <th>Entity</th>
+              <th>Host</th>
+              <th>User</th>
+              <th>Timestamp</th>
+              <th>Severity</th>
+              <th>Anomaly Score</th>
+              <th>Confidence</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="incidents-tbody">
+            <tr><td colspan="10" class="table-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── 3. Attack Chains ────────────────────────────────────────── -->
+    <section class="panel" id="panel-chains">
+      <div class="panel-header">
+        <h1 class="panel-title">Attack Chain View</h1>
+        <span class="panel-updated" id="chains-updated">Loading…</span>
+      </div>
+      <div class="chains-container" id="chains-container">
+        <div class="empty-state">Loading attack chains…</div>
+      </div>
+    </section>
+
+    <!-- ── 4. Attack Graph ─────────────────────────────────────────── -->
+    <section class="panel" id="panel-graph">
+      <div class="panel-header">
+        <h1 class="panel-title">Attack Graph</h1>
+        <span class="panel-updated" id="graph-updated">Select an incident to render its graph</span>
+      </div>
+      <div class="graph-wrapper" id="graph-wrapper">
+        <canvas id="graph-canvas"></canvas>
+        <div class="graph-legend" id="graph-legend"></div>
+        <div class="empty-state" id="graph-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>
+          <p>Select an incident from the <strong>Incidents</strong> panel to view its attack graph.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 5. MITRE ATT&CK ─────────────────────────────────────────── -->
+    <section class="panel" id="panel-mitre">
+      <div class="panel-header">
+        <h1 class="panel-title">MITRE ATT&amp;CK View</h1>
+        <span class="panel-updated" id="mitre-updated">Select an incident to view mappings</span>
+      </div>
+      <div class="mitre-wrapper" id="mitre-wrapper">
+        <div class="empty-state" id="mitre-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+          <p>Select an incident from the <strong>Incidents</strong> panel to view MITRE ATT&amp;CK mappings.</p>
+        </div>
+        <div id="mitre-content" class="hidden">
+          <div class="mitre-tactics" id="mitre-tactics"></div>
+          <div class="mitre-techniques-table">
+            <table class="data-table" id="mitre-table">
+              <thead>
+                <tr><th>Technique ID</th><th>Name</th><th>Tactic</th><th>Confidence</th></tr>
+              </thead>
+              <tbody id="mitre-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 6. SHAP Explainability ──────────────────────────────────── -->
+    <section class="panel" id="panel-shap">
+      <div class="panel-header">
+        <h1 class="panel-title">SHAP Explainability</h1>
+        <span class="panel-updated" id="shap-updated">Select an incident to view feature attributions</span>
+      </div>
+      <div class="shap-wrapper" id="shap-wrapper">
+        <div class="empty-state" id="shap-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/></svg>
+          <p>Select an incident from the <strong>Incidents</strong> panel to view SHAP feature attributions.</p>
+        </div>
+        <div id="shap-content" class="hidden">
+          <div class="shap-bars" id="shap-bars"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 7. Attack Context Panel ────────────────────────────────── -->
+    <section class="panel" id="panel-context">
+      <div class="panel-header">
+        <h1 class="panel-title">Attack Context</h1>
+        <span class="panel-updated" id="context-updated">Select an incident to view its full context</span>
+      </div>
+      <div class="context-wrapper" id="context-wrapper">
+        <div class="empty-state" id="context-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <p>Select an incident from the <strong>Incidents</strong> panel to view its full attack context.</p>
+        </div>
+        <div id="context-content" class="hidden">
+          <div class="context-sections" id="context-sections"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 8. Response Orchestrator ───────────────────────────────── -->
+    <section class="panel" id="panel-orchestrator">
+      <div class="panel-header">
+        <h1 class="panel-title">Response Orchestrator</h1>
+        <span class="panel-updated" id="orch-updated">Loading…</span>
+      </div>
+      <div class="orch-container" id="orch-container">
+        <div class="empty-state">Loading orchestration records…</div>
+      </div>
+    </section>
+
+    <!-- ── 9. Metrics Panel ───────────────────────────────────────── -->
+    <section class="panel" id="panel-metrics">
+      <div class="panel-header">
+        <h1 class="panel-title">Metrics Panel</h1>
+        <span class="panel-updated" id="metrics-updated">Loading…</span>
+      </div>
+      <div class="metrics-domains" id="metrics-domains">
+        <div class="empty-state">Loading metrics snapshot…</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Detail Drawer ─────────────────────────────────────────────── -->
+  <aside class="drawer" id="detail-drawer">
+    <div class="drawer-header">
+      <span class="drawer-title" id="drawer-title">Details</span>
+      <button class="drawer-close" onclick="closeDrawer()" aria-label="Close">✕</button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </aside>
+  <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
+  <!-- ── Toast ─────────────────────────────────────────────────────── -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

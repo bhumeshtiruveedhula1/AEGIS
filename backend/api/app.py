@@ -31,22 +31,27 @@ Startup Sequence
 
 from __future__ import annotations
 
+import pathlib
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import TYPE_CHECKING
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
-from backend.core.config import Settings, get_settings
-from backend.core.constants import APP_DESCRIPTION, APP_NAME, APP_VERSION, API_PREFIX
-from backend.core.exceptions import CyberShieldError
-from backend.core.logging import configure_logging, get_logger
 from backend.api.middleware import (
     LoggingMiddleware,
     RequestIdMiddleware,
 )
-from backend.api.routes import health as health_router
+from backend.api.routes import dashboard as dashboard_router, health as health_router
+from backend.core.config import Settings, get_settings
+from backend.core.constants import API_PREFIX, APP_DESCRIPTION, APP_NAME, APP_VERSION
+from backend.core.exceptions import CyberShieldError
+from backend.core.logging import configure_logging, get_logger
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 logger = get_logger(__name__)
 
@@ -149,7 +154,7 @@ def _register_exception_handlers(app: FastAPI) -> None:
         )
 
 
-def _register_routers(app: FastAPI, settings: Settings) -> None:
+def _register_routers(app: FastAPI, _settings: Settings) -> None:
     """
     Mount all API routers.
 
@@ -166,6 +171,13 @@ def _register_routers(app: FastAPI, settings: Settings) -> None:
     """
     # Foundation routes — always registered
     app.include_router(health_router.router, tags=["Health"])
+
+    # Dashboard routes — Module 7.1
+    app.include_router(
+        dashboard_router.router,
+        prefix=f"{API_PREFIX}/dashboard",
+        tags=["Dashboard"],
+    )
 
     # Future module router registration pattern:
     # if settings.feature_ingestion_enabled:
@@ -231,5 +243,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # API routers
     _register_routers(app, resolved_settings)
+
+    # Static files — serve frontend dashboard
+    # frontend/ lives at the project root (sibling of backend/)
+    _project_root = pathlib.Path(__file__).parent.parent.parent
+    _frontend_dir = _project_root / "frontend"
+    _static_dir   = _frontend_dir / "static"
+
+    if _static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
+
+    if _frontend_dir.exists():
+
+        @app.get("/", include_in_schema=False, response_class=HTMLResponse)
+        async def serve_dashboard() -> HTMLResponse:
+            """Serve the operational dashboard single-page app."""
+            html_path = _frontend_dir / "index.html"
+            if html_path.exists():
+                return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+            return HTMLResponse(content="<h1>Dashboard not found</h1>", status_code=404)
 
     return app
