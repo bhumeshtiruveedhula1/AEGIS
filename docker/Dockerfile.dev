@@ -33,10 +33,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install all dependencies (dev + prod + ML + LLM)
-# Both files must be copied: requirements-dev.txt references requirements.txt via -r
-COPY requirements.txt requirements-dev.txt ./
-RUN pip install --upgrade pip && pip install -r requirements-dev.txt
+# Install production + ML dependencies only (no coverage/pytest = no numba conflict)
+# ML packages (shap/scikit-learn/networkx) are production deps — they now live in
+# requirements.txt. Dev tools (coverage, pytest) are NOT installed in the container.
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
 
 # Copy source (will be overridden by volume mount in dev mode)
 COPY . .

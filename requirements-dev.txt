@@ -27,17 +27,6 @@ ruff==0.4.10
 # --- Pre-commit ---
 pre-commit==3.7.1
 
-# --- ML Stack (Week 2 onwards) ---
-scikit-learn==1.5.0
-numpy==1.26.4
-shap==0.45.0
-networkx==3.3
-pandas==2.2.2
-
-# --- LLM Stack (Week 3 onwards) ---
-anthropic==0.28.0
-tenacity==8.3.0
-
 # --- Database (Week 1 onwards) ---
 sqlalchemy==2.0.30
 alembic==1.13.1
