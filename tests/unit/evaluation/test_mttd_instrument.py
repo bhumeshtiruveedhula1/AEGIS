@@ -24,6 +24,12 @@ _LAB_ROOT = Path(__file__).parent.parent.parent.parent.parent / "aegis_ml_lab"
 if str(_LAB_ROOT) not in sys.path:
     sys.path.insert(0, str(_LAB_ROOT))
 
+if not (_LAB_ROOT / "evaluate" / "mttd_instrument.py").exists():
+    pytest.skip(
+        "aegis_ml_lab not found — clone it as a sibling of cybershield and re-run",
+        allow_module_level=True,
+    )
+
 from evaluate.mttd_instrument import (  # noqa: E402
     MTTD_TARGET_SECONDS,
     MTTDInstrumentor,

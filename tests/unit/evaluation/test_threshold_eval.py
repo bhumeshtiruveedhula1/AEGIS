@@ -20,6 +20,12 @@ _LAB_ROOT = Path(__file__).parent.parent.parent.parent.parent / "aegis_ml_lab"
 if str(_LAB_ROOT) not in sys.path:
     sys.path.insert(0, str(_LAB_ROOT))
 
+if not (_LAB_ROOT / "evaluate" / "threshold_eval.py").exists():
+    pytest.skip(
+        "aegis_ml_lab not found — clone it as a sibling of cybershield and re-run",
+        allow_module_level=True,
+    )
+
 from evaluate.threshold_eval import (
     CriterionResult,
     ThresholdEvalReport,
