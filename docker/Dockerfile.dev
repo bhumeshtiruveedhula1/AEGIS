@@ -34,7 +34,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install all dependencies (dev + prod + ML + LLM)
-COPY requirements-dev.txt .
+# Both files must be copied: requirements-dev.txt references requirements.txt via -r
+COPY requirements.txt requirements-dev.txt ./
 RUN pip install --upgrade pip && pip install -r requirements-dev.txt
 
 # Copy source (will be overridden by volume mount in dev mode)
