@@ -11,14 +11,15 @@ do NOT require ML models, stored graphs, or filesystem access.
 from __future__ import annotations
 
 import json
-from pathlib import Path
-
-import pytest
 
 # AttackChainEvaluator imports from aegis_ml_lab — sys.path patching
 # is handled by conftest.py / pytest ini; both cybershield and aegis_ml_lab
 # must be on PYTHONPATH for this test.
 import sys
+from pathlib import Path
+
+import pytest
+
 _LAB_ROOT = Path(__file__).parent.parent.parent.parent.parent / "aegis_ml_lab"
 if str(_LAB_ROOT) not in sys.path:
     sys.path.insert(0, str(_LAB_ROOT))
@@ -32,14 +33,15 @@ from evaluate.chain_eval import (  # noqa: E402
     _normalise_for_match,
 )
 
-
 # ---------------------------------------------------------------------------
 # Module-level fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="module")
 def kb():
     from backend.mitre.knowledge_base import get_knowledge_base
+
     return get_knowledge_base()
 
 
@@ -52,14 +54,16 @@ def evaluator():
 # Constants
 # ---------------------------------------------------------------------------
 
+
 class TestConstants:
     def test_target_is_70_percent(self):
-        assert CHAIN_ACCURACY_TARGET == pytest.approx(0.70)
+        assert pytest.approx(0.70) == CHAIN_ACCURACY_TARGET
 
 
 # ---------------------------------------------------------------------------
 # _normalise_for_match
 # ---------------------------------------------------------------------------
+
 
 class TestNormaliseForMatch:
     def test_single_technique_adds_parent(self):
@@ -86,6 +90,7 @@ class TestNormaliseForMatch:
 # ---------------------------------------------------------------------------
 # _build_mapped_attack_for_technique
 # ---------------------------------------------------------------------------
+
 
 class TestBuildMappedAttack:
     def test_known_technique_returns_mapped_attack(self, kb):
@@ -119,6 +124,7 @@ class TestBuildMappedAttack:
 # ---------------------------------------------------------------------------
 # AttackChainEvaluator.evaluate_scenario — structural tests
 # ---------------------------------------------------------------------------
+
 
 class TestEvaluateScenario:
     def test_lateral_movement_smb_detects_chain(self, evaluator):
@@ -177,6 +183,7 @@ class TestEvaluateScenario:
 # AttackChainEvaluator.evaluate_all
 # ---------------------------------------------------------------------------
 
+
 class TestEvaluateAll:
     def test_returns_report_with_9_scenarios(self, evaluator):
         report = evaluator.evaluate_all()
@@ -205,10 +212,15 @@ class TestEvaluateAll:
         report = evaluator.evaluate_all()
         names = {r.scenario for r in report.scenarios}
         expected = {
-            "brute_force_auth", "credential_stuffing", "lateral_movement_smb",
-            "privilege_escalation_token", "persistence_scheduled_task",
-            "command_execution_powershell", "network_discovery_scan",
-            "data_exfiltration_http", "full_kill_chain_it",
+            "brute_force_auth",
+            "credential_stuffing",
+            "lateral_movement_smb",
+            "privilege_escalation_token",
+            "persistence_scheduled_task",
+            "command_execution_powershell",
+            "network_discovery_scan",
+            "data_exfiltration_http",
+            "full_kill_chain_it",
         }
         assert names == expected
 
@@ -222,9 +234,7 @@ class TestEvaluateAll:
 
     def test_subset_scenarios(self, evaluator):
         """evaluate_all with a subset of 2 multi-technique scenarios."""
-        report = evaluator.evaluate_all(
-            scenarios=["lateral_movement_smb", "full_kill_chain_it"]
-        )
+        report = evaluator.evaluate_all(scenarios=["lateral_movement_smb", "full_kill_chain_it"])
         assert report.n_scenarios == 2
         assert report.n_with_any_tp == 2
         assert report.attack_chain_detection_accuracy == pytest.approx(1.0)
@@ -234,6 +244,7 @@ class TestEvaluateAll:
 # ---------------------------------------------------------------------------
 # save() method
 # ---------------------------------------------------------------------------
+
 
 class TestSave:
     def test_save_creates_valid_json(self, evaluator, tmp_path):
@@ -255,7 +266,7 @@ class TestSave:
 
     def test_save_without_report_calls_evaluate_all(self, evaluator, tmp_path):
         out = tmp_path / "auto_eval.json"
-        evaluator.save(out)   # no report argument
+        evaluator.save(out)  # no report argument
         payload = json.loads(out.read_text())
         assert payload["n_scenarios"] == 9
 
@@ -264,10 +275,11 @@ class TestSave:
 # log_report() smoke test
 # ---------------------------------------------------------------------------
 
+
 class TestLogReport:
     def test_log_report_does_not_raise(self, evaluator):
         report = evaluator.evaluate_all()
-        evaluator.log_report(report)   # must not raise
+        evaluator.log_report(report)  # must not raise
 
     def test_log_report_without_arg(self, evaluator):
-        evaluator.log_report()   # calls evaluate_all() internally, must not raise
+        evaluator.log_report()  # calls evaluate_all() internally, must not raise

@@ -53,28 +53,27 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from shared.base_generator import BaseGenerator
 from shared.event_schema import TelemetryEvent, make_event
 
-
 # ---------------------------------------------------------------------------
 # Realistic process lists (normal hospital server activity)
 # ---------------------------------------------------------------------------
 
 # Legitimate IIS / SQL Server / Windows processes
 NORMAL_PROCESSES = [
-    ("w3wp.exe",         "svc-iis",    "IIS worker process"),
-    ("sqlservr.exe",     "svc-mssql",  "SQL Server database engine"),
-    ("svchost.exe",      "SYSTEM",     "Windows service host"),
-    ("msdtc.exe",        "SYSTEM",     "Distributed Transaction Coordinator"),
-    ("powershell.exe",   "svc-admin",  "Windows PowerShell (scheduled maintenance)"),
-    ("wscript.exe",      "svc-admin",  "Windows Script Host"),
-    ("robocopy.exe",     "svc-backup", "Backup copy utility"),
-    ("vssvc.exe",        "SYSTEM",     "Volume Shadow Copy Service"),
-    ("WmiApSrv.exe",     "SYSTEM",     "WMI Performance Adapter"),
-    ("SearchIndexer.exe","SYSTEM",     "Windows Search Indexer"),
-    ("msiexec.exe",      "svc-admin",  "Windows Installer"),
-    ("taskhostw.exe",    "SYSTEM",     "Host for Windows Tasks"),
-    ("conhost.exe",      "SYSTEM",     "Console Window Host"),
-    ("dllhost.exe",      "SYSTEM",     "COM Surrogate"),
-    ("RuntimeBroker.exe","SYSTEM",     "Runtime Broker"),
+    ("w3wp.exe", "svc-iis", "IIS worker process"),
+    ("sqlservr.exe", "svc-mssql", "SQL Server database engine"),
+    ("svchost.exe", "SYSTEM", "Windows service host"),
+    ("msdtc.exe", "SYSTEM", "Distributed Transaction Coordinator"),
+    ("powershell.exe", "svc-admin", "Windows PowerShell (scheduled maintenance)"),
+    ("wscript.exe", "svc-admin", "Windows Script Host"),
+    ("robocopy.exe", "svc-backup", "Backup copy utility"),
+    ("vssvc.exe", "SYSTEM", "Volume Shadow Copy Service"),
+    ("WmiApSrv.exe", "SYSTEM", "WMI Performance Adapter"),
+    ("SearchIndexer.exe", "SYSTEM", "Windows Search Indexer"),
+    ("msiexec.exe", "svc-admin", "Windows Installer"),
+    ("taskhostw.exe", "SYSTEM", "Host for Windows Tasks"),
+    ("conhost.exe", "SYSTEM", "Console Window Host"),
+    ("dllhost.exe", "SYSTEM", "COM Surrogate"),
+    ("RuntimeBroker.exe", "SYSTEM", "Runtime Broker"),
 ]
 
 # Legitimate file paths accessed by hospital server processes
@@ -90,19 +89,25 @@ NORMAL_FILE_PATHS = [
 ]
 
 NORMAL_FILE_NAMES = [
-    "ERRORLOG", "app.log", "access.log", "backup.bak",
-    "web.config", "hospital_records_2024.mdf", "tempdb.mdf",
-    "audit_2024.log", "archive_20240101.zip",
+    "ERRORLOG",
+    "app.log",
+    "access.log",
+    "backup.bak",
+    "web.config",
+    "hospital_records_2024.mdf",
+    "tempdb.mdf",
+    "audit_2024.log",
+    "archive_20240101.zip",
 ]
 
 # Legitimate network destinations
 NORMAL_NETWORK_DESTINATIONS = [
-    ("172.20.1.20", "445",  "SMB - Domain Controller"),
-    ("172.20.1.20", "88",   "Kerberos - Domain Controller"),
-    ("172.20.1.20", "389",  "LDAP - Domain Controller"),
+    ("172.20.1.20", "445", "SMB - Domain Controller"),
+    ("172.20.1.20", "88", "Kerberos - Domain Controller"),
+    ("172.20.1.20", "389", "LDAP - Domain Controller"),
     ("172.20.1.10", "1433", "SQL Server self (loopback)"),
-    ("10.0.0.1",    "443",  "External HTTPS - vendor updates"),
-    ("10.0.0.53",   "53",   "DNS - internal resolver"),
+    ("10.0.0.1", "443", "External HTTPS - vendor updates"),
+    ("10.0.0.53", "53", "DNS - internal resolver"),
     ("172.20.0.10", "8000", "CyberShield API - health reporting"),
 ]
 
@@ -165,10 +170,10 @@ class HospitalServerGenerator(BaseGenerator):
         """Pre-populate some long-running processes."""
         long_running = [
             ("sqlservr.exe", "svc-mssql"),
-            ("w3wp.exe",     "svc-iis"),
-            ("svchost.exe",  "SYSTEM"),
-            ("svchost.exe",  "SYSTEM"),
-            ("svchost.exe",  "SYSTEM"),
+            ("w3wp.exe", "svc-iis"),
+            ("svchost.exe", "SYSTEM"),
+            ("svchost.exe", "SYSTEM"),
+            ("svchost.exe", "SYSTEM"),
         ]
         for process_name, user in long_running:
             pid = self._allocate_pid()
@@ -232,20 +237,22 @@ class HospitalServerGenerator(BaseGenerator):
 
         self._active_processes[pid] = (process_name, user)
 
-        return [make_event(
-            source="hospital_server",
-            event_type="ProcessCreate",
-            host=self.hostname,
-            user=user,
-            resource=process_name,
-            action="execute",
-            result="success",
-            pid=pid,
-            parent_pid=parent_pid,
-            command_line=f"{process_name} -service",
-            process_description=description,
-            windows_event_id=4688,
-        )]
+        return [
+            make_event(
+                source="hospital_server",
+                event_type="ProcessCreate",
+                host=self.hostname,
+                user=user,
+                resource=process_name,
+                action="execute",
+                result="success",
+                pid=pid,
+                parent_pid=parent_pid,
+                command_line=f"{process_name} -service",
+                process_description=description,
+                windows_event_id=4688,
+            )
+        ]
 
     def _process_terminate_events(self) -> list[TelemetryEvent]:
         """Occasionally terminate a short-lived process."""
@@ -262,18 +269,20 @@ class HospitalServerGenerator(BaseGenerator):
         del self._active_processes[pid]
         exit_code = 0  # Normal exit
 
-        return [make_event(
-            source="hospital_server",
-            event_type="ProcessTerminate",
-            host=self.hostname,
-            user=user,
-            resource=process_name,
-            action="execute",
-            result="success",
-            pid=pid,
-            exit_code=exit_code,
-            windows_event_id=4689,
-        )]
+        return [
+            make_event(
+                source="hospital_server",
+                event_type="ProcessTerminate",
+                host=self.hostname,
+                user=user,
+                resource=process_name,
+                action="execute",
+                result="success",
+                pid=pid,
+                exit_code=exit_code,
+                windows_event_id=4689,
+            )
+        ]
 
     def _network_connect_event(self) -> TelemetryEvent:
         """Generate a network connection event."""
@@ -331,7 +340,7 @@ class HospitalServerGenerator(BaseGenerator):
             resource=self.domain_controller_ip,
             action="authenticate",
             result="success" if success else "failure",
-            logon_type=3,          # Network logon
+            logon_type=3,  # Network logon
             auth_package="NTLM",
             windows_event_id=4624 if success else 4625,
         )
@@ -366,6 +375,7 @@ class HospitalServerGenerator(BaseGenerator):
 if __name__ == "__main__":
     # Start health server in background thread (mirrors domain-controller pattern)
     import importlib.util as _ilu
+
     _spec = _ilu.spec_from_file_location(
         "health_server", Path(__file__).parent / "health_server.py"
     )

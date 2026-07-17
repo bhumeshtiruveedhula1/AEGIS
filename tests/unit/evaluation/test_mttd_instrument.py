@@ -14,7 +14,6 @@ import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -29,13 +28,12 @@ from evaluate.mttd_instrument import (  # noqa: E402
     MTTD_TARGET_SECONDS,
     MTTDInstrumentor,
     MTTDSample,
-    MTTDSummary,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_alert(
     *,

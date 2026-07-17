@@ -12,9 +12,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -35,6 +33,7 @@ def _empty_store(cls_path: str):
 # 1. Health check — confirms app factory works
 # ---------------------------------------------------------------------------
 
+
 class TestAppHealth:
     def test_health_endpoint_returns_200(self, client: TestClient) -> None:
         r = client.get("/health")
@@ -50,6 +49,7 @@ class TestAppHealth:
 # ---------------------------------------------------------------------------
 # 2. Overview endpoint
 # ---------------------------------------------------------------------------
+
 
 class TestOverviewEndpoint:
     BASE = "/api/v1/dashboard/overview"
@@ -84,15 +84,16 @@ class TestOverviewEndpoint:
         assert "metrics" in body
 
     def test_orchestration_counts_when_records_exist(self, client: TestClient) -> None:
-        from backend.orchestrator.models import ApprovalRecord, ApprovalStatus, OrchestratorRecord
-        from datetime import timedelta
-
         now = datetime.now(UTC)
         approval = MagicMock()
         approval.status = "APPROVED"
 
-        rec1 = MagicMock(); rec1.approval.status = "APPROVED"; rec1.created_at = now
-        rec2 = MagicMock(); rec2.approval.status = "PENDING";  rec2.created_at = now
+        rec1 = MagicMock()
+        rec1.approval.status = "APPROVED"
+        rec1.created_at = now
+        rec2 = MagicMock()
+        rec2.approval.status = "PENDING"
+        rec2.created_at = now
 
         with (
             patch("backend.api.routes.dashboard.OrchestratorStore") as mock_orch,
@@ -127,6 +128,7 @@ class TestOverviewEndpoint:
 # 3. Incidents endpoint
 # ---------------------------------------------------------------------------
 
+
 class TestIncidentsEndpoint:
     BASE = "/api/v1/dashboard/incidents"
 
@@ -146,12 +148,17 @@ class TestIncidentsEndpoint:
 
     def test_incidents_sorted_newest_first(self, client: TestClient) -> None:
         from datetime import timedelta
+
         now = datetime.now(UTC)
-        older = MagicMock(); older.created_at = now - timedelta(hours=1)
-        newer = MagicMock(); newer.created_at = now
+        older = MagicMock()
+        older.created_at = now - timedelta(hours=1)
+        newer = MagicMock()
+        newer.created_at = now
         for mock in (older, newer):
-            mock.identity.alert_id = "a"; mock.identity.entity_id = "e"
-            mock.identity.host = "h"; mock.identity.user = "u"
+            mock.identity.alert_id = "a"
+            mock.identity.entity_id = "e"
+            mock.identity.host = "h"
+            mock.identity.user = "u"
             mock.detection.severity = "HIGH"
             mock.detection.anomaly_score = 0.8
             mock.detection.detection_confidence = 0.9
@@ -172,11 +179,16 @@ class TestIncidentsEndpoint:
         now = datetime.now(UTC)
         recs = []
         for i in range(10):
-            m = MagicMock(); m.created_at = now
-            m.identity.alert_id = f"a{i}"; m.identity.entity_id = "e"
-            m.identity.host = "h"; m.identity.user = "u"
-            m.detection.severity = "LOW"; m.detection.anomaly_score = 0.3
-            m.detection.detection_confidence = 0.5; m.detection.alert_status = "ACTIVE"
+            m = MagicMock()
+            m.created_at = now
+            m.identity.alert_id = f"a{i}"
+            m.identity.entity_id = "e"
+            m.identity.host = "h"
+            m.identity.user = "u"
+            m.detection.severity = "LOW"
+            m.detection.anomaly_score = 0.3
+            m.detection.detection_confidence = 0.5
+            m.detection.alert_status = "ACTIVE"
             recs.append(m)
 
         with patch("backend.api.routes.dashboard.ContextStore") as mock_cs:
@@ -188,6 +200,7 @@ class TestIncidentsEndpoint:
 # ---------------------------------------------------------------------------
 # 4. Metrics endpoint
 # ---------------------------------------------------------------------------
+
 
 class TestMetricsEndpoint:
     BASE = "/api/v1/dashboard/metrics"
@@ -219,6 +232,7 @@ class TestMetricsEndpoint:
 # 5. Chains endpoint
 # ---------------------------------------------------------------------------
 
+
 class TestChainsEndpoint:
     BASE = "/api/v1/dashboard/chains"
 
@@ -230,7 +244,9 @@ class TestChainsEndpoint:
 
     def test_empty_when_no_chain_data(self, client: TestClient) -> None:
         now = datetime.now(UTC)
-        ctx = MagicMock(); ctx.created_at = now; ctx.chain = None
+        ctx = MagicMock()
+        ctx.created_at = now
+        ctx.chain = None
         with patch("backend.api.routes.dashboard.ContextStore") as mock_cs:
             mock_cs.return_value.load_for_date.return_value = [ctx]
             r = client.get(self.BASE)
@@ -241,6 +257,7 @@ class TestChainsEndpoint:
 # ---------------------------------------------------------------------------
 # 6. Context detail endpoint
 # ---------------------------------------------------------------------------
+
 
 class TestContextEndpoint:
     BASE = "/api/v1/dashboard/context"
@@ -269,6 +286,7 @@ class TestContextEndpoint:
 # 7. Orchestrator endpoint
 # ---------------------------------------------------------------------------
 
+
 class TestOrchestratorEndpoint:
     BASE = "/api/v1/dashboard/orchestrator"
 
@@ -288,8 +306,12 @@ class TestOrchestratorEndpoint:
 
     def test_records_serialized(self, client: TestClient) -> None:
         now = datetime.now(UTC)
-        rec = MagicMock(); rec.created_at = now
-        rec.model_dump.return_value = {"orchestration_id": "orch-001", "playbook_id": "observe_only"}
+        rec = MagicMock()
+        rec.created_at = now
+        rec.model_dump.return_value = {
+            "orchestration_id": "orch-001",
+            "playbook_id": "observe_only",
+        }
         with patch("backend.api.routes.dashboard.OrchestratorStore") as mock_os:
             # Endpoint queries today then yesterday; records on today only
             mock_os.return_value.load_for_date.side_effect = [[rec], []]
@@ -317,6 +339,7 @@ class TestOrchestratorEndpoint:
 # ---------------------------------------------------------------------------
 # 8. API schema / OpenAPI presence
 # ---------------------------------------------------------------------------
+
 
 class TestApiSchema:
     def test_openapi_schema_has_dashboard_tag(self, client: TestClient) -> None:
@@ -347,6 +370,7 @@ class TestApiSchema:
 # ---------------------------------------------------------------------------
 # 9. Error resilience — storage exceptions don't crash endpoints
 # ---------------------------------------------------------------------------
+
 
 class TestErrorResilience:
     def test_overview_survives_store_exception(self, client: TestClient) -> None:

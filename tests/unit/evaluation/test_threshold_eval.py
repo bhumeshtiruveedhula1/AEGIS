@@ -20,22 +20,22 @@ _LAB_ROOT = Path(__file__).parent.parent.parent.parent.parent / "aegis_ml_lab"
 if str(_LAB_ROOT) not in sys.path:
     sys.path.insert(0, str(_LAB_ROOT))
 
-from thresholds.compute_ecdf import EntityThreshold, ThresholdResult
 from evaluate.threshold_eval import (
     CriterionResult,
     ThresholdEvalReport,
-    _eval_per_entity,
     _eval_cold_start,
     _eval_fallback_unknown_entity,
     _eval_fpr_vs_target,
+    _eval_per_entity,
     run_threshold_evaluation,
     save_report,
 )
-
+from thresholds.compute_ecdf import EntityThreshold, ThresholdResult
 
 # ---------------------------------------------------------------------------
 # Helpers — build synthetic ThresholdResult
 # ---------------------------------------------------------------------------
+
 
 def _make_tr(
     per_entity_thresholds: dict[str, float] | None = None,
@@ -54,7 +54,7 @@ def _make_tr(
             entity_key=ek,
             threshold=thresh,
             method="per_entity",
-            n_scored=cold_start_min + 10,    # above min
+            n_scored=cold_start_min + 10,  # above min
         )
     for ek, n_scored in cold_start_thresholds.items():
         entity_thresholds[ek] = EntityThreshold(
@@ -76,6 +76,7 @@ def _make_tr(
 # ---------------------------------------------------------------------------
 # Criterion 1 — Per-entity threshold behaviour
 # ---------------------------------------------------------------------------
+
 
 class TestCriterion1PerEntity:
     def test_pass_when_multiple_distinct_thresholds(self):
@@ -115,6 +116,7 @@ class TestCriterion1PerEntity:
 # ---------------------------------------------------------------------------
 # Criterion 2 — Cold-start threshold behaviour
 # ---------------------------------------------------------------------------
+
 
 class TestCriterion2ColdStart:
     def test_pass_when_cold_start_entities_use_fallback(self):
@@ -159,6 +161,7 @@ class TestCriterion2ColdStart:
 # Criterion 3 — Fallback for unseen entity
 # ---------------------------------------------------------------------------
 
+
 class TestCriterion3Fallback:
     def test_unseen_entity_returns_fallback(self):
         tr = _make_tr(per_entity_thresholds={"e1": 0.5, "e2": 0.3}, fallback=0.10)
@@ -189,32 +192,39 @@ class TestCriterion3Fallback:
 # Criterion 4 — FPR vs target (synthetic raw_metrics.json)
 # ---------------------------------------------------------------------------
 
+
 class TestCriterion5FPRVsTarget:
     def test_pass_when_all_fprs_below_target(self, tmp_path):
-        metrics = {"scenarios": [
-            {"scenario": "a", "fpr": 0.02, "no_attack_records": False},
-            {"scenario": "b", "fpr": 0.03, "no_attack_records": False},
-        ]}
+        metrics = {
+            "scenarios": [
+                {"scenario": "a", "fpr": 0.02, "no_attack_records": False},
+                {"scenario": "b", "fpr": 0.03, "no_attack_records": False},
+            ]
+        }
         path = tmp_path / "raw_metrics.json"
         path.write_text(json.dumps(metrics))
         result = _eval_fpr_vs_target(path)
         assert result.passed is True
 
     def test_fail_when_mean_fpr_above_target(self, tmp_path):
-        metrics = {"scenarios": [
-            {"scenario": "a", "fpr": 0.08, "no_attack_records": False},
-            {"scenario": "b", "fpr": 0.06, "no_attack_records": False},
-        ]}
+        metrics = {
+            "scenarios": [
+                {"scenario": "a", "fpr": 0.08, "no_attack_records": False},
+                {"scenario": "b", "fpr": 0.06, "no_attack_records": False},
+            ]
+        }
         path = tmp_path / "raw_metrics.json"
         path.write_text(json.dumps(metrics))
         result = _eval_fpr_vs_target(path)
         assert result.passed is False
 
     def test_skip_no_attack_records_scenario(self, tmp_path):
-        metrics = {"scenarios": [
-            {"scenario": "a", "fpr": 0.01, "no_attack_records": False},
-            {"scenario": "b", "fpr": 0.99, "no_attack_records": True},  # skipped
-        ]}
+        metrics = {
+            "scenarios": [
+                {"scenario": "a", "fpr": 0.01, "no_attack_records": False},
+                {"scenario": "b", "fpr": 0.99, "no_attack_records": True},  # skipped
+            ]
+        }
         path = tmp_path / "raw_metrics.json"
         path.write_text(json.dumps(metrics))
         result = _eval_fpr_vs_target(path)
@@ -226,9 +236,11 @@ class TestCriterion5FPRVsTarget:
         assert result.passed is False
 
     def test_exactly_at_target_passes(self, tmp_path):
-        metrics = {"scenarios": [
-            {"scenario": "a", "fpr": 0.05, "no_attack_records": False},
-        ]}
+        metrics = {
+            "scenarios": [
+                {"scenario": "a", "fpr": 0.05, "no_attack_records": False},
+            ]
+        }
         path = tmp_path / "raw_metrics.json"
         path.write_text(json.dumps(metrics))
         result = _eval_fpr_vs_target(path)
@@ -239,9 +251,12 @@ class TestCriterion5FPRVsTarget:
 # ThresholdResult property tests
 # ---------------------------------------------------------------------------
 
+
 class TestThresholdResultProperties:
     def test_per_entity_count(self):
-        tr = _make_tr(per_entity_thresholds={"e1": 0.5, "e2": 0.3}, cold_start_thresholds={"cold": 5})
+        tr = _make_tr(
+            per_entity_thresholds={"e1": 0.5, "e2": 0.3}, cold_start_thresholds={"cold": 5}
+        )
         assert tr.per_entity_count == 2
 
     def test_cold_start_count(self):
@@ -261,6 +276,7 @@ class TestThresholdResultProperties:
 # ---------------------------------------------------------------------------
 # save_report round-trip
 # ---------------------------------------------------------------------------
+
 
 class TestSaveReport:
     def test_save_creates_json(self, tmp_path):
@@ -320,6 +336,7 @@ class TestSaveReport:
 # ---------------------------------------------------------------------------
 # Integration — run_threshold_evaluation against production data
 # ---------------------------------------------------------------------------
+
 
 class TestRunThresholdEvaluation:
     def test_returns_report_with_5_criteria(self):
