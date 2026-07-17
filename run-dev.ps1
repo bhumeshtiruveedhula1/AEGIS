@@ -14,8 +14,8 @@
   Not the demo script — dev only.
 #>
 
-$ROOT      = Split-Path -Parent $MyInvocation.MyCommand.Path
-$BACKEND   = Join-Path $ROOT "cybershield"
+$BACKEND   = Split-Path -Parent $MyInvocation.MyCommand.Path          # cybershield/
+$ROOT      = Split-Path -Parent $BACKEND                               # cyber-et/
 $FRONTEND  = Join-Path $ROOT "frontend-team"
 $VENV_PY   = Join-Path $BACKEND ".venv\Scripts\python.exe"
 $HEALTH_URL = "http://127.0.0.1:8000/health"
