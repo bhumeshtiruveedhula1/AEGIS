@@ -95,7 +95,7 @@ async def get_overview() -> dict[str, Any]:
 
     return {
         "generated_at": datetime.now(UTC).isoformat(),
-        "platform_status": status.model_dump() if hasattr(status, "model_dump") else str(status),
+        "platform_status": status if isinstance(status, dict) else (status.model_dump(mode="json") if hasattr(status, "model_dump") else {}),
         "snapshot_available": snapshot is not None,
         "metrics": {
             "events_normalized": _safe(snapshot, "pipeline", "events_normalized"),
