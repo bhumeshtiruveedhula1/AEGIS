@@ -30,7 +30,6 @@ from fastapi import APIRouter, HTTPException, Query
 from backend.context.storage import ContextStore
 from backend.core.config import get_settings
 from backend.metrics.service import MetricService
-from backend.metrics.store import MetricStore
 from backend.orchestrator.storage import OrchestratorStore
 
 logger = structlog.get_logger(__name__)
@@ -49,7 +48,7 @@ def _orch_store() -> OrchestratorStore:
 
 
 def _metric_service() -> MetricService:
-    return MetricService(store=MetricStore(get_settings().data_dir / "metrics"))
+    return MetricService(store_dir=get_settings().data_dir / "metrics")
 
 
 # ---------------------------------------------------------------------------
