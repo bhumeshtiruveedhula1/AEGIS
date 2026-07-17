@@ -79,14 +79,14 @@ NORMAL_PROCESSES = [
 
 # Legitimate file paths accessed by hospital server processes
 NORMAL_FILE_PATHS = [
-    r"C:\inetpub\wwwroot\HospitalApp\data\",
-    r"C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Log\",
-    r"C:\Windows\System32\",
-    r"C:\Windows\Temp\",
-    r"C:\inetpub\logs\LogFiles\W3SVC1\",
-    r"D:\PatientData\Records\",
-    r"D:\Backups\Daily\",
-    r"C:\Windows\System32\winevt\Logs\",
+    r"C:\inetpub\wwwroot\HospitalApp\data",
+    r"C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Log",
+    r"C:\Windows\System32",
+    r"C:\Windows\Temp",
+    r"C:\inetpub\logs\LogFiles\W3SVC1",
+    r"D:\PatientData\Records",
+    r"D:\Backups\Daily",
+    r"C:\Windows\System32\winevt\Logs",
 ]
 
 NORMAL_FILE_NAMES = [
@@ -364,5 +364,14 @@ class HospitalServerGenerator(BaseGenerator):
 
 
 if __name__ == "__main__":
+    # Start health server in background thread (mirrors domain-controller pattern)
+    import importlib.util as _ilu
+    _spec = _ilu.spec_from_file_location(
+        "health_server", Path(__file__).parent / "health_server.py"
+    )
+    _mod = _ilu.module_from_spec(_spec)  # type: ignore[arg-type]
+    _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
+    _mod.start_health_server()
+
     generator = HospitalServerGenerator()
     generator.run()

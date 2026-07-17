@@ -144,6 +144,8 @@ async def get_incidents(
     for ctx in records:
         identity = ctx.identity
         detection = ctx.detection
+        mitre = getattr(ctx, "mitre", None)
+        primary = getattr(mitre, "primary_technique", None)
         incidents.append(
             {
                 "context_id": ctx.context_id,
@@ -156,6 +158,13 @@ async def get_incidents(
                 "anomaly_score": getattr(detection, "anomaly_score", None),
                 "detection_confidence": getattr(detection, "detection_confidence", None),
                 "status": getattr(detection, "alert_status", "ACTIVE"),
+                # MITRE ATT&CK fields — sourced from ctx.mitre.primary_technique
+                # None when no ATT&CK mapping was produced for this context
+                "mitre_tactic": getattr(primary, "tactic_name", None),
+                "mitre_tactic_id": getattr(primary, "tactic_id", None),
+                "mitre_technique": getattr(primary, "technique_name", None),
+                "mitre_technique_id": getattr(primary, "technique_id", None),
+                "mitre_confidence": getattr(primary, "confidence", None),
             }
         )
 

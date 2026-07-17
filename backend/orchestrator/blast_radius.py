@@ -32,6 +32,12 @@ _LATERAL_NODE_THRESHOLD = 3  # ≥3 graph nodes → LATERAL
 _MULTI_ENTITY_THRESHOLD = 5  # ≥5 graph nodes → MULTI_ENTITY
 
 
+# NOTE: Despite the name, this is NOT the 'Blast Radius Engine' architectural
+# feature that was cut from AEGIS scope. This is a lightweight deterministic
+# scope classifier (~60 lines, no graph traversal, no topology modeling) that
+# reads pre-computed fields off AttackContext to tag estimated_scope.
+# Confirmed via git archaeology 2026-07-17 — no prior/deleted BlastRadiusEngine
+# ever existed in this repo (single-commit origin: 28a34fa feat(phase-6)).
 def compute_blast_radius(context: AttackContext) -> BlastRadiusReport:
     """
     Extract blast radius from AttackContext without any graph construction.

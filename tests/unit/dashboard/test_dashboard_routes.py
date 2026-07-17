@@ -62,7 +62,7 @@ class TestOverviewEndpoint:
             mock_orch.return_value.load_for_date.return_value = []
             mock_ms.return_value.reader.store.load_latest.return_value = None
             mock_ms.return_value.get_platform_status.return_value = MagicMock(
-                model_dump=lambda: {"overall_status": "healthy", "components": {}}
+                model_dump=lambda **kw: {"overall_status": "healthy", "components": {}}
             )
             r = client.get(self.BASE)
         assert r.status_code == 200
@@ -75,7 +75,7 @@ class TestOverviewEndpoint:
             mock_orch.return_value.load_for_date.return_value = []
             mock_ms.return_value.reader.store.load_latest.return_value = None
             mock_ms.return_value.get_platform_status.return_value = MagicMock(
-                model_dump=lambda: {"overall_status": "healthy", "components": {}}
+                model_dump=lambda **kw: {"overall_status": "healthy", "components": {}}
             )
             r = client.get(self.BASE)
         body = r.json()
@@ -101,7 +101,7 @@ class TestOverviewEndpoint:
             mock_orch.return_value.load_for_date.return_value = [rec1, rec2]
             mock_ms.return_value.reader.store.load_latest.return_value = None
             mock_ms.return_value.get_platform_status.return_value = MagicMock(
-                model_dump=lambda: {"overall_status": "healthy", "components": {}}
+                model_dump=lambda **kw: {"overall_status": "healthy", "components": {}}
             )
             r = client.get(self.BASE)
         body = r.json()
@@ -117,7 +117,7 @@ class TestOverviewEndpoint:
             mock_orch.return_value.load_for_date.return_value = []
             mock_ms.return_value.reader.store.load_latest.return_value = None
             mock_ms.return_value.get_platform_status.return_value = MagicMock(
-                model_dump=lambda: {}
+                model_dump=lambda **kw: {}
             )
             r = client.get(self.BASE)
         assert r.json()["snapshot_available"] is False
@@ -357,7 +357,7 @@ class TestErrorResilience:
             mock_orch.return_value.load_for_date.side_effect = Exception("disk error")
             mock_ms.return_value.reader.store.load_latest.side_effect = Exception("disk error")
             mock_ms.return_value.get_platform_status.return_value = MagicMock(
-                model_dump=lambda: {}
+                model_dump=lambda **kw: {}
             )
             r = client.get("/api/v1/dashboard/overview")
         assert r.status_code == 200  # graceful empty state
