@@ -179,14 +179,15 @@ def _register_routers(app: FastAPI, _settings: Settings) -> None:
         tags=["Dashboard"],
     )
 
-    # Future module router registration pattern:
-    # if settings.feature_ingestion_enabled:
-    #     from backend.api.routes import ingestion as ingestion_router
-    #     app.include_router(
-    #         ingestion_router.router,
-    #         prefix=f"{API_PREFIX}/alerts",
-    #         tags=["Ingestion"],
-    #     )
+    # Live event ingestion — Module 8.1
+    if _settings.feature_ingestion_enabled:
+        from backend.api.routes import ingestion as ingestion_router
+
+        app.include_router(
+            ingestion_router.router,
+            prefix=f"{API_PREFIX}/ingest",
+            tags=["Ingestion"],
+        )
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -248,7 +249,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # frontend/ lives at the project root (sibling of backend/)
     _project_root = pathlib.Path(__file__).parent.parent.parent
     _frontend_dir = _project_root / "frontend"
-    _static_dir   = _frontend_dir / "static"
+    _static_dir = _frontend_dir / "static"
 
     if _static_dir.exists():
         app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")

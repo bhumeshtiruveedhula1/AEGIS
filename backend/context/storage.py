@@ -72,6 +72,7 @@ class ContextStore:
     def save_batch(self, contexts: list[AttackContext]) -> list[Path]:
         """Batch append, grouped by date partition."""
         from collections import defaultdict
+
         groups: dict[str, list[AttackContext]] = defaultdict(list)
         for c in contexts:
             groups[self._daily_jsonl_path(c.assembled_at).name].append(c)
@@ -136,11 +137,11 @@ class ContextStore:
                     continue
                 try:
                     results.append(AttackContext.model_validate_json(line))
-                except Exception:  # noqa: BLE001
+                except Exception:
                     errors += 1
         logger.debug(
             "contexts_loaded",
-            date=target.date().isoformat(),
+            date=target.strftime("%Y-%m-%d"),  # works for both date and datetime
             count=len(results),
             errors=errors,
         )
@@ -152,9 +153,7 @@ class ContextStore:
 
     def list_context_ids(self) -> list[str]:
         """Return all stored context IDs, newest first."""
-        return [f.stem for f in sorted(
-            self._index_dir.glob("*.json"), reverse=True
-        )]
+        return [f.stem for f in sorted(self._index_dir.glob("*.json"), reverse=True)]
 
     def list_dates(self) -> list[str]:
         files = sorted(self._dir.glob(f"{_JSONL_PREFIX}_*.jsonl"), reverse=True)

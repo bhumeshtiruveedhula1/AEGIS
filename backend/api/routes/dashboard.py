@@ -25,7 +25,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 
 from backend.context.storage import ContextStore
 from backend.core.config import get_settings
@@ -123,13 +123,18 @@ async def get_overview() -> dict[str, Any]:
 
 @router.get("/incidents", summary="Recent detection alerts")
 async def get_incidents(
+    request: Request,
     limit: int = Query(default=50, ge=1, le=200),
 ) -> dict[str, Any]:
     """
     Return recent attack contexts (proxy for active incidents).
     Each AttackContext contains alert, entity, severity, scores, and status.
     """
-    ctx_store = _context_store()
+    # Prefer app-level settings so test fixtures and deployed environments
+    # can override data_dir without touching the global settings singleton.
+    app_settings = getattr(request.app.state, "settings", None)
+    ctx_data_dir = getattr(app_settings, "data_dir", None) or get_settings().data_dir
+    ctx_store = ContextStore(ctx_data_dir / "context")
     today = datetime.now(UTC).date()
     yesterday = (datetime.now(UTC) - timedelta(days=1)).date()
 
@@ -138,8 +143,16 @@ async def get_incidents(
         with contextlib.suppress(Exception):
             records.extend(ctx_store.load_for_date(date))
 
-    # Sort by timestamp descending, take limit
-    records.sort(key=lambda r: r.created_at, reverse=True)
+    def _resolve_ts(r: Any) -> datetime:
+        """Return a tz-aware datetime from assembled_at or created_at."""
+        for attr in ("assembled_at", "created_at"):
+            val = getattr(r, attr, None)
+            if isinstance(val, datetime):
+                return val if val.tzinfo else val.replace(tzinfo=UTC)
+        return datetime.min.replace(tzinfo=UTC)
+
+    # Sort by resolved timestamp descending, take limit.
+    records.sort(key=_resolve_ts, reverse=True)
     records = records[:limit]
 
     incidents = []
@@ -155,7 +168,7 @@ async def get_incidents(
                 "entity_id": identity.entity_id,
                 "host": identity.host,
                 "user": identity.user,
-                "timestamp": ctx.created_at.isoformat(),
+                "timestamp": _resolve_ts(ctx).isoformat(),
                 "severity": getattr(detection, "severity", None),
                 "anomaly_score": getattr(detection, "anomaly_score", None),
                 "detection_confidence": getattr(detection, "detection_confidence", None),
