@@ -51,6 +51,7 @@ Usage
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 
@@ -68,6 +69,12 @@ from backend.detection.scorer import AnomalyScorer
 from backend.detection.storage import ModelStore
 from backend.detection.trainer import IsolationForestTrainer
 from backend.features.models import FeatureRecord
+
+_CYBERSHIELD_ROOT = Path(__file__).parent.parent.parent
+_LAB_ROOT = _CYBERSHIELD_ROOT.parent / "aegis_ml_lab"
+for _p in (str(_CYBERSHIELD_ROOT), str(_LAB_ROOT)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 logger = structlog.get_logger(__name__)
 
