@@ -332,10 +332,10 @@ class SHAPExplainer:
             for i, name in enumerate(self._feature_names)
         ]
 
-        # Sort by abs_shap_value descending, assign ranks
+        # Sort by shap_value descending (positive contributions = why it's anomalous), assign ranks
         sorted_contributions = sorted(
             contributions_unsorted,
-            key=lambda c: c.abs_shap_value,
+            key=lambda c: c.shap_value,
             reverse=True,
         )
         # Rebuild with correct ranks
